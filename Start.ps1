@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 param([int]$McpPort = 18006, [int]$ApiPort = 18005)
-$env:ADVISORY_REPO_PATH = "c:\build\maxgolov\advisory\external\advisory-database"
+$env:ADVISORY_REPO_PATH = "$PSScriptRoot/external/advisory-database"
 $env:MCP_PORT = $McpPort
 $env:ADVISORY_API_PORT = $ApiPort
 Push-Location "$PSScriptRoot"

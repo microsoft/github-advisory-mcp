@@ -6,7 +6,7 @@
       "type": "shell",
       "command": "npm install",
       "options": {
-        "cwd": "${workspaceFolder}/services/mcp/advisory"
+        "cwd": "${workspaceFolder}"
       },
       "group": "build",
       "presentation": {
@@ -20,7 +20,7 @@
       "type": "shell",
       "command": "npm run build",
       "options": {
-        "cwd": "${workspaceFolder}/services/mcp/advisory"
+        "cwd": "${workspaceFolder}"
       },
       "group": {
         "kind": "build",
@@ -37,7 +37,7 @@
       "type": "shell",
       "command": "npm run dev",
       "options": {
-        "cwd": "${workspaceFolder}/services/mcp/advisory"
+        "cwd": "${workspaceFolder}"
       },
       "group": "build",
       "isBackground": true,
@@ -68,9 +68,9 @@
       "type": "shell",
       "command": "npm run start:http",
       "options": {
-        "cwd": "${workspaceFolder}/services/mcp/advisory",
+        "cwd": "${workspaceFolder}",
         "env": {
-          "ADVISORY_REPO_PATH": "c:/build/maxgolov/advisory/external/advisory-database",
+          "ADVISORY_REPO_PATH": "${workspaceFolder}/external/advisory-database",
           "MCP_PORT": "18006",
           "ADVISORY_API_PORT": "18005"
         }
@@ -100,9 +100,9 @@
       "type": "shell",
       "command": "npm run start:stdio",
       "options": {
-        "cwd": "${workspaceFolder}/services/mcp/advisory",
+        "cwd": "${workspaceFolder}",
         "env": {
-          "ADVISORY_REPO_PATH": "c:/build/maxgolov/advisory/external/advisory-database",
+          "ADVISORY_REPO_PATH": "${workspaceFolder}/external/advisory-database",
           "ADVISORY_API_PORT": "18005"
         }
       },
@@ -120,7 +120,7 @@
       "type": "shell",
       "command": "npm test",
       "options": {
-        "cwd": "${workspaceFolder}/services/mcp/advisory"
+        "cwd": "${workspaceFolder}"
       },
       "group": {
         "kind": "test",
@@ -138,7 +138,7 @@
       "type": "shell",
       "command": "npm run test:e2e",
       "options": {
-        "cwd": "${workspaceFolder}/services/mcp/advisory"
+        "cwd": "${workspaceFolder}"
       },
       "group": "test",
       "presentation": {
@@ -153,7 +153,7 @@
       "type": "shell",
       "command": "npm run test:integration",
       "options": {
-        "cwd": "${workspaceFolder}/services/mcp/advisory"
+        "cwd": "${workspaceFolder}"
       },
       "group": "test",
       "presentation": {
@@ -168,7 +168,7 @@
       "type": "shell",
       "command": "npm run clean",
       "options": {
-        "cwd": "${workspaceFolder}/services/mcp/advisory"
+        "cwd": "${workspaceFolder}"
       },
       "group": "build",
       "presentation": {
