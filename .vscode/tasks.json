@@ -1,0 +1,181 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Advisory: Install Dependencies",
+      "type": "shell",
+      "command": "npm install",
+      "options": {
+        "cwd": "${workspaceFolder}/services/mcp/advisory"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Advisory: Build",
+      "type": "shell",
+      "command": "npm run build",
+      "options": {
+        "cwd": "${workspaceFolder}/services/mcp/advisory"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Advisory: Watch",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/services/mcp/advisory"
+      },
+      "group": "build",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": {
+        "owner": "typescript",
+        "fileLocation": "relative",
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+)\\s+-\\s+error\\s+TS(\\d+):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "code": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Starting compilation",
+          "endsPattern": "Watching for file changes"
+        }
+      }
+    },
+    {
+      "label": "Advisory: Start HTTP Server",
+      "type": "shell",
+      "command": "npm run start:http",
+      "options": {
+        "cwd": "${workspaceFolder}/services/mcp/advisory",
+        "env": {
+          "ADVISORY_REPO_PATH": "c:/build/maxgolov/advisory/external/advisory-database",
+          "MCP_PORT": "18006",
+          "ADVISORY_API_PORT": "18005"
+        }
+      },
+      "group": "none",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false
+      },
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^(.*)$",
+          "file": 1
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Starting",
+          "endsPattern": "listening on port"
+        }
+      },
+      "dependsOn": ["Advisory: Build"]
+    },
+    {
+      "label": "Advisory: Start stdio Server",
+      "type": "shell",
+      "command": "npm run start:stdio",
+      "options": {
+        "cwd": "${workspaceFolder}/services/mcp/advisory",
+        "env": {
+          "ADVISORY_REPO_PATH": "c:/build/maxgolov/advisory/external/advisory-database",
+          "ADVISORY_API_PORT": "18005"
+        }
+      },
+      "group": "none",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": [],
+      "dependsOn": ["Advisory: Build"]
+    },
+    {
+      "label": "Advisory: Run All Tests",
+      "type": "shell",
+      "command": "npm test",
+      "options": {
+        "cwd": "${workspaceFolder}/services/mcp/advisory"
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "dependsOn": ["Advisory: Build"]
+    },
+    {
+      "label": "Advisory: Run E2E Tests",
+      "type": "shell",
+      "command": "npm run test:e2e",
+      "options": {
+        "cwd": "${workspaceFolder}/services/mcp/advisory"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "dependsOn": ["Advisory: Build"]
+    },
+    {
+      "label": "Advisory: Run AI Integration Tests",
+      "type": "shell",
+      "command": "npm run test:integration",
+      "options": {
+        "cwd": "${workspaceFolder}/services/mcp/advisory"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "dependsOn": ["Advisory: Build"]
+    },
+    {
+      "label": "Advisory: Clean",
+      "type": "shell",
+      "command": "npm run clean",
+      "options": {
+        "cwd": "${workspaceFolder}/services/mcp/advisory"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
