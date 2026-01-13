@@ -31,8 +31,11 @@ const apiHost = process.env.ADVISORY_API_HOST || '127.0.0.1';
 async function setupAdvisoryDatabase(): Promise<void> {
   console.error('[Advisory] Setting up advisory database...');
   const scriptPath = join(__dirname, '..', 'scripts', 'setup-advisory-database.sh');
-  
-  return new Promise((resolve, reject) => {
+    // Validate script path exists and is within expected directory
+  if (!scriptPath.includes('scripts/setup-advisory-database.sh')) {
+    throw new Error('Invalid script path');
+  }
+    return new Promise((resolve, reject) => {
     const proc = spawn('bash', [scriptPath, repoPath], {
       stdio: 'inherit'
     });

@@ -14,7 +14,7 @@ describe("MCP Advisory Server E2E Tests", () => {
   const API_PORT = parseInt(process.env.ADVISORY_API_PORT || "18005", 10);
   const REPO_PATH =
     process.env.ADVISORY_REPO_PATH ||
-    "c:/build/maxgolov/advisory/external/advisory-database";
+    "./external/advisory-database";
   const baseUrl = `http://localhost:${MCP_PORT}/mcp`;
   let sessionId: string;
 
@@ -22,9 +22,10 @@ describe("MCP Advisory Server E2E Tests", () => {
     console.log(`[Test] Starting MCP server on port ${MCP_PORT}...`);
     console.log(`[Test] Local API port: ${API_PORT}`);
     console.log(`[Test] Repository path: ${REPO_PATH}`);
+    console.log(`[Test] Note: First run may take 1-2 minutes to clone advisory database`);
 
     serverProcess = await startMCPServer(MCP_PORT, API_PORT, REPO_PATH);
-  }, 20000);
+  }, 180000); // 3 minutes for first-time database clone
 
   afterAll(async () => {
     console.log("[Test] Stopping MCP server...");

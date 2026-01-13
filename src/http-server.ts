@@ -46,6 +46,41 @@ const repoPath = process.env.ADVISORY_REPO_PATH || join(__dirname, '..', 'extern
 
 // Store transports by session ID
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
+const sessionTimeouts: Record<string, NodeJS.Timeout> = {};
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+
+/**
+ * Clean up expired session
+ */
+function cleanupSession(sessionId: string): void {
+  logger.info('Cleaning up session', { sessionId });
+  const transport = transports[sessionId];
+  if (transport) {
+    try {
+      transport.close();
+    } catch (error) {
+      logger.warn('Error closing transport', { sessionId, error: error instanceof Error ? error.message : String(error) });
+    }
+    delete transports[sessionId];
+  }
+  if (sessionTimeouts[sessionId]) {
+    clearTimeout(sessionTimeouts[sessionId]);
+    delete sessionTimeouts[sessionId];
+  }
+}
+
+/**
+ * Reset session timeout
+ */
+function resetSessionTimeout(sessionId: string): void {
+  if (sessionTimeouts[sessionId]) {
+    clearTimeout(sessionTimeouts[sessionId]);
+  }
+  sessionTimeouts[sessionId] = setTimeout(() => {
+    logger.info('Session timeout', { sessionId });
+    cleanupSession(sessionId);
+  }, SESSION_TIMEOUT_MS);
+}
 
 // Store local API server instance
 let localApiUrl: string;
@@ -53,6 +88,11 @@ let localApiUrl: string;
 async function setupAdvisoryDatabase(): Promise<void> {
   setupLogger.info('Setting up advisory database...');
   const scriptPath = join(__dirname, '..', 'scripts', 'setup-advisory-database.sh');
+  
+  // Validate script path exists and is within expected directory
+  if (!scriptPath.includes('scripts/setup-advisory-database.sh')) {
+    throw new Error('Invalid script path');
+  }
   
   return new Promise((resolve, reject) => {
     const proc = spawn('bash', [scriptPath, repoPath], {
@@ -64,8 +104,8 @@ async function setupAdvisoryDatabase(): Promise<void> {
         setupLogger.info('Database setup complete');
         resolve();
       } else {
-        setupLogger.warn(`Database setup exited with code ${code}, continuing...`);
-        resolve(); // Continue even if setup fails
+        setupLogger.error(`Database setup failed with code ${code}`);
+        reject(new Error(`Database setup failed with exit code ${code}`));
       }
     });
     
@@ -103,8 +143,9 @@ app.post("/mcp", async (req: Request, res: Response) => {
     let transport: StreamableHTTPServerTransport;
 
     if (sessionId && transports[sessionId]) {
-      // Reuse existing transport
+      // Reuse existing transport and reset timeout
       transport = transports[sessionId];
+      resetSessionTimeout(sessionId);
       await transport.handleRequest(req, res, req.body);
     } else if (!sessionId && isInitializeRequest(req.body)) {
       // New initialization request
@@ -120,11 +161,13 @@ app.post("/mcp", async (req: Request, res: Response) => {
 
       // Store transport
       transports[newSessionId] = transport;
+      
+      // Set up session timeout
+      resetSessionTimeout(newSessionId);
 
       // Clean up on close
       transport.onclose = () => {
-        logger.info('Session closed', { sessionId: newSessionId });
-        delete transports[newSessionId];
+        cleanupSession(newSessionId);
       };
 
       // Connect to MCP server

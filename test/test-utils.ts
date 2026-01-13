@@ -80,8 +80,8 @@ export async function startMCPServer(
     console.error("[Server Error]", data.toString().trim());
   });
 
-  // Wait for server to be ready
-  await waitForServer(port, 15000);
+  // Wait for server to be ready (longer timeout for database clone on first run)
+  await waitForServer(port, 180000); // 3 minutes
 
   return serverProcess;
 }

@@ -58,7 +58,7 @@ export const listAdvisoriesSchema = z.object({
   sort: z.enum(['updated', 'published']).optional().describe('Sort field')
 });
 
-export async function listAdvisories(params: any): Promise<CallToolResult> {
+export async function listAdvisories(params: unknown): Promise<CallToolResult> {
   try {
     logger.debug('list_advisories called', { params });
     
@@ -66,7 +66,7 @@ export async function listAdvisories(params: any): Promise<CallToolResult> {
     const endpoint = `/advisories${queryString}`;
     
     const fetchStart = Date.now();
-    const advisories = await fetchLocalAPI<any[]>(endpoint);
+    const advisories = await fetchLocalAPI<Array<Record<string, unknown>>>(endpoint);
     const fetchDuration = Date.now() - fetchStart;
     
     logger.info('list_advisories completed', { count: advisories.length, duration_ms: fetchDuration });
@@ -77,20 +77,20 @@ export async function listAdvisories(params: any): Promise<CallToolResult> {
         text: JSON.stringify({
           count: advisories.length,
           advisories: advisories.map(adv => ({
-            ghsa_id: adv.ghsa_id,
-            cve_id: adv.cve_id,
-            summary: adv.summary,
-            severity: adv.severity,
-            type: adv.type,
-            published_at: adv.published_at,
-            updated_at: adv.updated_at,
-            affected_packages: adv.vulnerabilities.map((v: any) => ({
-              ecosystem: v.package.ecosystem,
-              name: v.package.name,
+            ghsa_id: (adv as any).ghsa_id,
+            cve_id: (adv as any).cve_id,
+            summary: (adv as any).summary,
+            severity: (adv as any).severity,
+            type: (adv as any).type,
+            published_at: (adv as any).published_at,
+            updated_at: (adv as any).updated_at,
+            affected_packages: ((adv as any).vulnerabilities || []).map((v: any) => ({
+              ecosystem: v.package?.ecosystem,
+              name: v.package?.name,
               vulnerable_range: v.vulnerable_version_range
             })),
-            cwes: adv.cwes,
-            url: adv.html_url
+            cwes: (adv as any).cwes,
+            url: (adv as any).html_url
           }))
         }, null, 2)
       }]
@@ -116,11 +116,12 @@ export const getAdvisorySchema = z.object({
   ghsa_id: z.string().describe('GHSA identifier (e.g., GHSA-xxxx-xxxx-xxxx)')
 });
 
-export async function getAdvisory(params: { ghsa_id: string }): Promise<CallToolResult> {
+export async function getAdvisory(params: unknown): Promise<CallToolResult> {
   try {
-    logger.debug('get_advisory called', { ghsa_id: params.ghsa_id });
-    const advisory = await fetchLocalAPI<any>(`/advisories/${params.ghsa_id}`);
-    logger.info('get_advisory completed', { ghsa_id: params.ghsa_id });
+    const validated = getAdvisorySchema.parse(params);
+    logger.debug('get_advisory called', { ghsa_id: validated.ghsa_id });
+    const advisory = await fetchLocalAPI<Record<string, unknown>>(`/advisories/${validated.ghsa_id}`);
+    logger.info('get_advisory completed', { ghsa_id: validated.ghsa_id });
 
     return {
       content: [{
@@ -130,12 +131,13 @@ export async function getAdvisory(params: { ghsa_id: string }): Promise<CallTool
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('get_advisory failed', { ghsa_id: params.ghsa_id, error: errorMessage });
+    const ghsaId = (params as any)?.ghsa_id || 'unknown';
+    logger.error('get_advisory failed', { ghsa_id: ghsaId, error: errorMessage });
     
     return {
       content: [{
         type: 'text',
-        text: `Error fetching advisory ${params.ghsa_id}: ${errorMessage}`
+        text: `Error fetching advisory ${ghsaId}: ${errorMessage}`
       }],
       isError: true
     };

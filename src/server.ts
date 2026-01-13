@@ -74,9 +74,9 @@ export function createAdvisoryServer(): Server {
 
     switch (name) {
       case "list_advisories":
-        return await listAdvisories(args as any);
+        return await listAdvisories(args || {});
       case "get_advisory":
-        return await getAdvisory(args as any);
+        return await getAdvisory(args || {});
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
