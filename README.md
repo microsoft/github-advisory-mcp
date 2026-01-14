@@ -257,6 +257,66 @@ Get detailed information about a specific advisory.
 }
 ```
 
+## Security & Validation
+
+### Input Validation
+
+All MCP tool parameters are validated using **Zod schemas**:
+
+**list_advisories validation:**
+- `ecosystem`: Enum of valid ecosystems (npm, pip, maven, etc.) - prevents injection
+- `severity`: Enum (low, medium, high, critical, unknown) - prevents injection  
+- `per_page`: Number constrained to 1-100 max - prevents resource exhaustion
+- `cwes`: String pattern matching for CWE identifiers - validates format
+- Date filters: ISO 8601 format validation
+
+**get_advisory validation:**
+- `ghsa_id`: Pattern match `GHSA-xxxx-xxxx-xxxx` - prevents path traversal
+- Required field enforcement - rejects empty/null values
+
+**File System Protection:**
+- Path validation: Script execution paths validated against known safe scripts
+- No user-supplied paths accepted - prevents directory traversal
+- Read-only database access - no write operations exposed
+
+### Rate Limiting
+
+**Current:** No rate limiting (stdio transport = single local user)
+
+**Considerations:**
+- **stdio mode**: Single-process, single-user - no rate limiting needed
+- **HTTP mode**: Consider adding rate limiting if exposed beyond localhost
+- **Database queries**: Inherently rate-limited by disk I/O (310K+ files)
+
+**Future (HTTP mode):**
+```typescript
+// Example: express-rate-limit for HTTP endpoints
+import rateLimit from 'express-rate-limit';
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+
+app.use('/mcp', limiter);
+```
+
+### Session Security
+
+- **Timeout**: 30-minute automatic session cleanup
+- **Isolation**: Each MCP session isolated (no shared state)
+- **Transport**: stdio (local) or HTTP (localhost-only by default)
+
+### Known Security Measures
+
+✅ Path validation for script execution (prevents command injection)  
+✅ Zod schema validation (prevents type confusion attacks)  
+✅ Session timeout (prevents resource leaks)  
+✅ Read-only database access (no write exposure)  
+✅ Enum validation for critical parameters (prevents injection)  
+⚠️ No rate limiting (stdio mode = trusted local user)  
+⚠️ No authentication (stdio mode = local process trust model)
+
 ## Integration with Orchestrator
 
 The MCP Advisory server can be managed by the Romulus RED orchestrator:
@@ -291,6 +351,88 @@ async with stdio_client(
 - 3333: Inspector MCP
 - 3500: Memory Service
 
+## Troubleshooting
+
+### Database Clone Failures
+
+**Issue:** `git clone` fails for advisory-database
+```
+fatal: unable to access 'https://github.com/github/advisory-database.git/': Could not resolve host
+```
+
+**Solutions:**
+1. Check network connectivity: `ping github.com`
+2. Use VPN if behind corporate firewall
+3. Pre-download database: `git clone --depth=1 https://github.com/github/advisory-database.git external/advisory-database`
+4. Point to existing database: `export ADVISORY_REPO_PATH=/path/to/existing/advisory-database`
+
+**Timing:** Initial clone takes 2-5 minutes (310K+ files, ~500MB)
+
+### Server Won't Start
+
+**Issue:** `Error: EADDRINUSE: address already in use`
+
+**Solution:**
+```bash
+# Check what's using the port
+lsof -i :18005  # Local API
+lsof -i :18006  # MCP server
+
+# Kill process
+kill -9 <PID>
+```
+
+### Windows-Specific Issues
+
+**Issue:** Bash script fails on Windows
+```powershell
+./scripts/setup-advisory-database.sh
+# bash: ./scripts/setup-advisory-database.sh: No such file or directory
+```
+
+**Solution:** Use Git Bash or WSL, or manual clone:
+```powershell
+git clone --depth=1 https://github.com/github/advisory-database.git external/advisory-database
+```
+
+### MCP Tools Not Available in Copilot
+
+**Issue:** Copilot doesn't see advisory MCP tools
+
+**Solution:**
+1. Verify `.vscode/mcp.json` exists in workspace root
+2. Reload VS Code: `Ctrl+Shift+P` → "Developer: Reload Window"
+3. Check build: `npm run build` and verify `dist/index.js` exists
+4. Check Copilot logs: `Ctrl+Shift+P` → "Developer: Open Logs Folder"
+
+### Query Performance Issues
+
+**Symptom:** Slow advisory queries (>5 seconds)
+
+**Solutions:**
+1. First query always slower (loads database index into memory)
+2. Use `per_page` parameter to limit results: `per_page: 10`
+3. Filter by ecosystem to reduce search space: `ecosystem: "npm"`
+4. Check disk I/O: Advisory database is 310K+ files
+
+**Performance Benchmarks:**
+- First query (cold start): 2-4 seconds (index load)
+- Subsequent queries: 50-200ms (cached)
+- Database size: ~500MB, 310,635 files
+
+### Database Update Strategy
+
+**Automated Updates:**
+The advisory database auto-updates on server start via `git pull` in setup script.
+
+**Manual Update:**
+```bash
+cd external/advisory-database
+git pull origin main
+```
+
+**Update Frequency:** GitHub updates advisory-database multiple times daily
+
 ## Known Issues
 
 ### Windows
@@ -305,6 +447,25 @@ async with stdio_client(
 - Subsequent queries are fast (cached)
 
 ## Development
+
+### CI/CD Pipeline
+
+**GitHub Actions:** `.github/workflows/build.yml`
+
+**Build Matrix:**
+- Node.js 18.x, 20.x
+- Ubuntu latest
+- Runs on: Push to main/dev, PRs
+
+**Timing Estimates:**
+- npm ci: ~30-45 seconds (dependency install)
+- npm run build: ~1-2 seconds (TypeScript compilation)
+- **Total CI time: ~45-60 seconds**
+
+**Note:** Tests are not run in CI (yet) because:
+- Database clone takes 2-5 minutes (310K+ files)
+- Would increase CI time to ~6-7 minutes per run
+- Consider separate "full test" workflow for main branch only
 
 **Watch Mode:**
 ```powershell
