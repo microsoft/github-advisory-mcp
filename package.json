@@ -1,0 +1,70 @@
+{
+  "name": "@romulus/mcp-advisory",
+  "version": "1.0.0",
+  "description": "MCP server for querying GitHub Security Advisories from local clone",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "romulus-mcp-advisory": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start:stdio": "node dist/index.js",
+    "start:http": "node dist/http-server.js",
+    "test": "vitest run",
+    "test:e2e": "vitest run test/e2e",
+    "test:integration": "vitest run test/integration",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "github",
+    "security",
+    "advisories",
+    "vulnerabilities",
+    "romulus"
+  ],
+  "author": "Romulus Team",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.20.2",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/api-logs": "^0.207.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.66.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.207.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.207.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.207.0",
+    "@opentelemetry/instrumentation": "^0.207.0",
+    "@opentelemetry/instrumentation-express": "^0.56.0",
+    "@opentelemetry/instrumentation-http": "^0.207.0",
+    "@opentelemetry/instrumentation-winston": "^0.52.0",
+    "@opentelemetry/resources": "^2.2.0",
+    "@opentelemetry/sdk-logs": "^0.207.0",
+    "@opentelemetry/sdk-metrics": "^2.2.0",
+    "@opentelemetry/sdk-node": "^0.207.0",
+    "@opentelemetry/sdk-trace-base": "^2.2.0",
+    "@opentelemetry/sdk-trace-node": "^2.2.0",
+    "@opentelemetry/semantic-conventions": "^1.37.0",
+    "cors": "^2.8.5",
+    "express": "^5.0.1",
+    "winston": "^3.18.3",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@ai-sdk/azure": "^2.0.67",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "ai": "^5.0.92",
+    "dotenv": "^17.2.3",
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.15"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

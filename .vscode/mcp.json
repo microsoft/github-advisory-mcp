@@ -1,0 +1,14 @@
+{
+	"servers": {
+		"advisory": {
+			"command": "node",
+			"args": [
+				"${workspaceFolder}/dist/index.js"
+			],
+			"type": "stdio",
+			"env": {
+				"ADVISORY_REPO_PATH": "${workspaceFolder}/external/advisory-database"
+			}
+		}
+	}
+}
