@@ -27,28 +27,63 @@ MCP server for querying GitHub Security Advisories from a local cloned advisory 
 └─────────────────────────────────────┘
 ```
 
-## Setup
+## Quick Start (VS Code + GitHub Copilot)
 
-### 1. Install Dependencies
-```powershell
-cd services/mcp/advisory
+**For users who just want to use the MCP server in VS Code:**
+
+1. **Clone and Setup:**
+```bash
+git clone https://github.com/microsoft/github-advisory-mcp.git
+cd github-advisory-mcp
 npm install
 npm run build
 ```
 
-### 2. Clone Advisory Database
+2. **The `.vscode/mcp.json` is pre-configured:**
+```json
+{
+  "servers": {
+    "advisory": {
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/index.js"],
+      "type": "stdio",
+      "env": {
+        "ADVISORY_REPO_PATH": "${workspaceFolder}/external/advisory-database"
+      }
+    }
+  }
+}
+```
+
+3. **Reload VS Code** - Copilot will automatically:
+   - Clone the advisory database (~310K advisories) on first use
+   - Enable MCP tools: `list_advisories`, `get_advisory`
+
+4. **Test in Copilot Chat:**
+```
+@workspace Find high-severity npm advisories related to express
+```
+
+**Done!** The MCP server runs automatically when Copilot needs it.
+
+## Setup (Advanced)
+
+### 1. Install Dependencies
 ```bash
-# Linux/Mac (uses bash script)
+npm install
+npm run build
+```
+
+### 2. Database Setup (Optional - Auto-clones on first use)
+```bash
+# Linux/Mac (manual pre-clone)
 ./scripts/setup-advisory-database.sh
 
-# Windows (manual setup)
+# Windows (manual pre-clone)
 git clone --depth=1 https://github.com/github/advisory-database.git external/advisory-database
 ```
 
-**Alternative:** Use existing database from advisory repo:
-```powershell
-$env:ADVISORY_REPO_PATH = "c:\build\maxgolov\advisory\external\advisory-database"
-```
+The database will auto-clone on first MCP tool call if not present.
 
 ## Usage
 
@@ -75,6 +110,24 @@ ADVISORY_REPO_PATH=/path/to/advisory-database node dist/index.js
 ```
 
 ## Testing
+
+### Quick Test (Copilot Chat)
+After setup, test in VS Code Copilot Chat:
+```
+@workspace /tests What tools does the advisory MCP server provide?
+```
+
+Or query advisories directly:
+```
+@workspace Find critical npm advisories from 2024
+@workspace Get details for GHSA-jc85-fpwf-qm7x
+```
+
+### Unit Tests (Automated)
+```bash
+npm test           # All tests
+npm run test:e2e   # E2E tests (18 tests, ~9.5s after database cached)
+```
 
 ### Health Checks
 ```powershell

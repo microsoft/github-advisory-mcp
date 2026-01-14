@@ -24,9 +24,10 @@ Thumbs.db
 # IDE
 .idea/
 
-# VS Code workspace settings (keep tasks.json)
+# VS Code workspace settings (keep tasks.json and mcp.json)
 .vscode/*
 !.vscode/tasks.json
+!.vscode/mcp.json
 
 # External advisory database (git submodule/clone)
 external/
