@@ -110,10 +110,11 @@ MCP_PORT=18006
 ADVISORY_API_PORT=18005
 ADVISORY_REPO_PATH=/path/to/advisory-database
 
-# Azure OpenAI (for AI SDK tests)
+# Azure OpenAI (for AI SDK tests - OPTIONAL)
+# Tests automatically skip if not configured
 AZURE_OPENAI_API_KEY=your-key-here
-AZURE_OPENAI_ENDPOINT=https://romuluspoc-aoi.openai.azure.com/
-AZURE_OPENAI_DEPLOYMENT=gpt-5-mini
+AZURE_OPENAI_ENDPOINT=https://your-endpoint.openai.azure.com/
+AZURE_OPENAI_DEPLOYMENT=gpt-4o
 
 # GitHub Token (for advisory database access)
 GITHUB_TOKEN=your-token-here
@@ -197,9 +198,10 @@ try {
 - Check network connectivity to localhost
 
 ### AI Tests Skip
-- Verify Azure OpenAI credentials in .env
-- Tests automatically skip if AZURE_OPENAI_ENDPOINT not set
-- Check Azure subscription and deployment name
+- **Tests automatically skip** if AZURE_OPENAI_ENDPOINT or AZURE_OPENAI_API_KEY not set
+- This is by design - integration tests are optional
+- Safe to run `npm test` without Azure credentials
+- Check test output for: `[Test] Skipping AI SDK tests - Azure OpenAI credentials not configured`
 
 ### Advisory Database Empty
 - Run `./scripts/setup-advisory-database.sh`
