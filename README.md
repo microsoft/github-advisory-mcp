@@ -98,7 +98,7 @@ The database will auto-clone on first MCP tool call if not present.
 
 **Manual Start:**
 ```powershell
-$env:ADVISORY_REPO_PATH = "c:\build\maxgolov\advisory\external\advisory-database"
+$env:ADVISORY_REPO_PATH = "C:\path\to\advisory-database"
 $env:MCP_PORT = "18006"
 $env:ADVISORY_API_PORT = "18005"
 node dist\http-server.js

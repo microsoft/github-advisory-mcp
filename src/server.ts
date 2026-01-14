@@ -12,7 +12,7 @@ import {
  */
 export function createAdvisoryServer(): Server {
   const server = new Server({
-    name: "romulus-advisory-server",
+    name: "github-advisory-server",
     version: "1.0.0",
   }, {
     capabilities: {

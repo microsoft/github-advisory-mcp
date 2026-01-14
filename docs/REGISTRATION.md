@@ -47,7 +47,7 @@ This server is intended for **external (3P) open source publication** on GitHub.
 **Distribution Method:**
 ```bash
 # Users install via npm/npx (Node.js required)
-npx @romulus/mcp-advisory
+npx @microsoft/github-advisory-mcp
 
 # Or clone repository directly
 git clone https://github.com/microsoft/github-advisory-mcp
@@ -169,7 +169,7 @@ node dist/index.js
 git clone --depth=1 https://github.com/github/advisory-database.git
 
 # 2. Install server
-npm install -g @romulus/mcp-advisory
+npm install -g @microsoft/github-advisory-mcp
 
 # 3. Configure environment
 export ADVISORY_REPO_PATH=/path/to/advisory-database
@@ -181,7 +181,7 @@ export ADVISORY_REPO_PATH=/path/to/advisory-database
   "mcpServers": {
     "github-advisory": {
       "command": "npx",
-      "args": ["@romulus/mcp-advisory"],
+      "args": ["@microsoft/github-advisory-mcp"],
       "env": {
         "ADVISORY_REPO_PATH": "/path/to/advisory-database"
       }

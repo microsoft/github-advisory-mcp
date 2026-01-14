@@ -16,7 +16,7 @@ describe("AI SDK Integration with Azure OpenAI", () => {
   const API_PORT = parseInt(process.env.ADVISORY_API_PORT || "18005", 10);
   const REPO_PATH =
     process.env.ADVISORY_REPO_PATH ||
-    "c:/build/maxgolov/advisory/external/advisory-database";
+    "./external/advisory-database";
   const baseUrl = `http://localhost:${MCP_PORT}/mcp`;
   let sessionId: string;
 

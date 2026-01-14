@@ -122,7 +122,7 @@ async function setupAdvisoryDatabase(): Promise<void> {
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
-    service: "romulus-advisory-mcp",
+    service: "github-advisory-mcp",
     mcpPort,
     apiPort,
     localApiUrl,

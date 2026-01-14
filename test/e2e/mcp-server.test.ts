@@ -40,7 +40,7 @@ describe("MCP Advisory Server E2E Tests", () => {
       const health = await response.json();
       expect(health).toMatchObject({
         status: "ok",
-        service: "romulus-advisory-mcp",
+        service: "github-advisory-mcp",
         mcpPort: MCP_PORT,
         apiPort: API_PORT,
       });

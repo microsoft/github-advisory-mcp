@@ -1,11 +1,11 @@
 {
-  "name": "@romulus/mcp-advisory",
+  "name": "@microsoft/github-advisory-mcp",
   "version": "1.0.0",
   "description": "MCP server for querying GitHub Security Advisories from local clone",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "romulus-mcp-advisory": "dist/index.js"
+    "github-advisory-mcp": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -26,9 +26,9 @@
     "security",
     "advisories",
     "vulnerabilities",
-    "romulus"
+    "microsoft"
   ],
-  "author": "Romulus Team",
+  "author": "Microsoft",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.2",

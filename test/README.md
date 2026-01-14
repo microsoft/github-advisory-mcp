@@ -108,7 +108,7 @@ Create `.env` file in project root:
 # MCP Server Configuration
 MCP_PORT=18006
 ADVISORY_API_PORT=18005
-ADVISORY_REPO_PATH=c:/build/maxgolov/advisory/external/advisory-database
+ADVISORY_REPO_PATH=/path/to/advisory-database
 
 # Azure OpenAI (for AI SDK tests)
 AZURE_OPENAI_API_KEY=your-key-here
