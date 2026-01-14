@@ -450,17 +450,24 @@ git pull origin main
 
 ### CI/CD Pipeline
 
-**GitHub Actions:** `.github/workflows/build.yml`
+**GitHub Actions Workflows:**
 
-**Build Matrix:**
-- Node.js 18.x, 20.x
-- Ubuntu latest
-- Runs on: Push to main/dev, PRs
+1. **Build Validation** (`.github/workflows/build.yml`)
+   - **Triggers:** Push to main/dev, PRs
+   - **Matrix:** Node.js 18.x, 20.x on Ubuntu latest
+   - **Steps:** Checkout → Setup Node → npm ci → Build → Verify artifacts
+   - **Timing:** ~27-33 seconds
+
+2. **Copilot PR Review** (`.github/workflows/copilot-review.yml`)
+   - **Triggers:** PR opened or synchronized
+   - **Action:** Automatically requests Copilot code review
+   - **Permissions:** pull-requests: write, contents: read
+   - **Benefit:** Automated AI code review on every PR
 
 **Timing Estimates:**
-- npm ci: ~30-45 seconds (dependency install)
-- npm run build: ~1-2 seconds (TypeScript compilation)
-- **Total CI time: ~45-60 seconds**
+- npm ci: ~10 seconds (dependency install)
+- npm run build: ~4 seconds (TypeScript compilation)
+- **Total CI time: ~27-33 seconds**
 
 **Note:** Tests are not run in CI (yet) because:
 - Database clone takes 2-5 minutes (310K+ files)
