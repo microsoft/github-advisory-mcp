@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Romulus Advisory MCP Server
+ * Microsoft GitHub Advisory MCP Server
  * 
  * Serves GitHub Security Advisories from local cloned advisory-database
  * Supports both stdio and HTTP streaming transports
@@ -91,7 +91,7 @@ async function main() {
     // stdio mode (default)
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error('[Advisory] Romulus Advisory MCP Server running on stdio');
+    console.error('[Advisory] GitHub Advisory MCP Server running on stdio');
     console.error(`[Advisory] Local API: ${apiHost}:${apiPort}`);
     console.error(`[Advisory] Repository: ${repoPath}`);
   }

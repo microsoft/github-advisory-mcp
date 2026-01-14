@@ -283,7 +283,7 @@ Must include:
 ### Document History
 | Date | Author | Change | Approval |
 |------|--------|--------|----------|
-| 2026-01-13 | Romulus Team | Initial registration document | Pending |
+| 2026-01-13 | Microsoft | Initial registration document | Pending |
 
 ### Approval Signatures
 - [ ] **Product Owner:** _______________________  Date: _______

@@ -10,7 +10,7 @@ REPO_PATH="${ADVISORY_REPO_PATH:-external/advisory-database}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "Starting Romulus MCP Advisory Server..."
+echo "Starting Microsoft GitHub Advisory MCP Server..."
 echo "MCP Port: $MCP_PORT"
 echo "API Port: $API_PORT"
 echo "Repository: $REPO_PATH"

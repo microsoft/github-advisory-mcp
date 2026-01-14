@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Romulus Advisory MCP Server - HTTP Streaming mode
+ * Microsoft GitHub Advisory MCP Server - HTTP Streaming mode
  *
  * This server runs in HTTP streaming mode for remote MCP client access.
  */
@@ -226,7 +226,7 @@ async function main() {
 
   // Start HTTP server
   app.listen(mcpPort, () => {
-    logger.info(`Romulus Advisory MCP Server (HTTP) listening`, { port: mcpPort });
+    logger.info(`GitHub Advisory MCP Server (HTTP) listening`, { port: mcpPort });
     logger.info(`MCP endpoint: http://localhost:${mcpPort}/mcp`);
     logger.info(`Health check: http://localhost:${mcpPort}/health`);
     apiLogger.info(`Local API: ${localApiUrl}`);

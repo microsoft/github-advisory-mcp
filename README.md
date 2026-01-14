@@ -1,4 +1,4 @@
-# Romulus MCP Advisory Server
+# Microsoft GitHub Advisory MCP Server
 
 MCP server for querying GitHub Security Advisories from a local cloned advisory database.
 
@@ -319,7 +319,7 @@ app.use('/mcp', limiter);
 
 ## Integration with Orchestrator
 
-The MCP Advisory server can be managed by the Romulus RED orchestrator:
+The MCP Advisory server can be integrated with orchestration platforms:
 
 ```python
 from mcp import ClientSession
