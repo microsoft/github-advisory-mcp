@@ -16,9 +16,9 @@ import { createLocalAdvisoryServer } from "./local-server.js";
 import { join } from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import { spawn } from "child_process";
 import { initTelemetry } from "./telemetry.js";
 import { createLogger } from "./logger.js";
+import { refreshAdvisoryDatabase, startPeriodicRefresh } from "./refresh-database.js";
 
 const logger = createLogger('MCP-HTTP');
 const apiLogger = createLogger('API');
@@ -44,10 +44,17 @@ const apiPort = parseInt(process.env.ADVISORY_API_PORT || '18005');
 const apiHost = process.env.ADVISORY_API_HOST || '127.0.0.1';
 const repoPath = process.env.ADVISORY_REPO_PATH || join(__dirname, '..', 'external', 'advisory-database');
 
+// Refresh configuration
+const refreshOnStart = process.env.ADVISORY_REFRESH_ON_START !== 'false'; // Default: true
+const refreshIntervalMs = parseInt(process.env.ADVISORY_REFRESH_INTERVAL_MS || '0'); // Default: disabled (0)
+
 // Store transports by session ID
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
 const sessionTimeouts: Record<string, NodeJS.Timeout> = {};
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+
+// Periodic refresh cleanup function
+let stopPeriodicRefresh: (() => void) | null = null;
 
 /**
  * Clean up expired session
@@ -85,35 +92,40 @@ function resetSessionTimeout(sessionId: string): void {
 // Store local API server instance
 let localApiUrl: string;
 
+/**
+ * Setup advisory database - cross-platform (Windows/Linux).
+ * Uses git directly instead of bash scripts.
+ */
 async function setupAdvisoryDatabase(): Promise<void> {
-  setupLogger.info('Setting up advisory database...');
-  const scriptPath = join(__dirname, '..', 'scripts', 'setup-advisory-database.sh');
-  
-  // Validate script path exists and is within expected directory
-  if (!scriptPath.includes('scripts/setup-advisory-database.sh')) {
-    throw new Error('Invalid script path');
+  if (!refreshOnStart) {
+    setupLogger.info('Refresh on start disabled, using cached data');
+    return;
   }
+
+  setupLogger.info('Refreshing advisory database...');
   
-  return new Promise((resolve, reject) => {
-    const proc = spawn('bash', [scriptPath, repoPath], {
-      stdio: 'inherit'
+  try {
+    const updated = await refreshAdvisoryDatabase(repoPath, {
+      skipOnFailure: true,
+      timeout: 120000, // 2 minutes
     });
     
-    proc.on('close', (code) => {
-      if (code === 0) {
-        setupLogger.info('Database setup complete');
-        resolve();
-      } else {
-        setupLogger.error(`Database setup failed with code ${code}`);
-        reject(new Error(`Database setup failed with exit code ${code}`));
-      }
+    if (updated) {
+      setupLogger.info('Database refreshed successfully');
+    }
+  } catch (err) {
+    setupLogger.warn('Database refresh failed, continuing with cached data', {
+      error: err instanceof Error ? err.message : String(err),
     });
-    
-    proc.on('error', (err) => {
-      setupLogger.warn('Setup script error', { error: err.message });
-      resolve(); // Continue even if setup fails
+  }
+
+  // Start periodic refresh if configured
+  if (refreshIntervalMs > 0) {
+    stopPeriodicRefresh = startPeriodicRefresh(repoPath, refreshIntervalMs);
+    setupLogger.info('Periodic refresh enabled', {
+      intervalMinutes: Math.round(refreshIntervalMs / 60000),
     });
-  });
+  }
 }
 
 /**

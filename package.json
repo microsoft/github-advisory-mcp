@@ -55,11 +55,12 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@ai-sdk/azure": "^2.0.67",
+    "@ai-sdk/azure": "^3.0.12",
+    "@azure/identity": "^4.13.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.2",
-    "ai": "^5.0.92",
+    "ai": "^6.0.39",
     "dotenv": "^17.2.3",
     "typescript": "^5.7.2",
     "vitest": "^4.0.15"
