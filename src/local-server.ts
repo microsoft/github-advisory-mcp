@@ -84,7 +84,7 @@ export async function createLocalAdvisoryServer(config: LocalServerConfig) {
       
       res.json(advisory);
     } catch (error) {
-      console.error(`Error getting advisory ${req.params.ghsa_id}:`, error);
+      console.error('Error getting advisory %s:', req.params.ghsa_id, error);
       if (error instanceof Error && error.message.includes('not found')) {
         res.status(404).json({
           error: 'Not found',
@@ -165,3 +165,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       process.exit(1);
     });
 }
+
