@@ -142,14 +142,12 @@ export async function initializeMCPSession(
     throw new Error(`Initialize failed: ${response.status} ${errorText}`);
   }
 
+  // Consume response body (required before reading headers in some environments)
   const contentType = response.headers.get("content-type") || "";
-  let data: any;
-
   if (contentType.includes("text/event-stream")) {
-    const text = await response.text();
-    data = parseSSEResponse(text);
+    await response.text();
   } else {
-    data = await response.json();
+    await response.json();
   }
 
   const sessionId = response.headers.get("mcp-session-id");
