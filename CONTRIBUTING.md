@@ -1,16 +1,24 @@
 # Contributing to GitHub Advisory MCP Server
 
-## Contribution Restrictions
+## External Contributions
 
-**This project is currently under restricted development and only accepts contributions from Microsoft employees (FTEs and interns).**
+**This project does not accept external contributions (pull requests) at this time.** Only verified committers from the Microsoft GitHub organization may contribute code.
 
-External contributions are not being accepted at this time. If you are a Microsoft employee interested in contributing, please reach out through internal channels or via the contacts listed below.
+If you would like to contribute, we encourage you to:
+
+- **Report bugs** by [opening an issue](https://github.com/microsoft/github-advisory-mcp/issues/new)
+- **Request features** by [opening an issue](https://github.com/microsoft/github-advisory-mcp/issues/new)
+- **Reach out to the project maintainers** at [opencode@microsoft.com](mailto:opencode@microsoft.com) to discuss your ideas
+
+We appreciate your interest and feedback!
 
 ## For Microsoft Employees
 
-This project welcomes contributions and suggestions from Microsoft employees. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit [Contributor License Agreements](https://cla.opensource.microsoft.com).
+This project welcomes contributions and suggestions from Microsoft employees (FTEs and interns). Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit [Contributor License Agreements](https://cla.opensource.microsoft.com).
 
 When you submit a pull request, a CLA bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repos using our CLA.
+
+All commits must be signed and verified. The `main` branch is protected and requires pull request reviews, passing CI status checks, and signed commits.
 
 ## Code of Conduct
 
@@ -95,12 +103,7 @@ When adding new features or making significant changes, please update:
 ## Security
 Please review [SECURITY.md](SECURITY.md) for information on reporting security vulnerabilities.
 
-## Compliance
-This project requires SDL compliance before open source publication. See [docs/REGISTRATION.md](docs/REGISTRATION.md) for tracking status.
-
 ## Contact
-- Internal Slack: Contact the MSECAI Applied Research team
-- Email: For security concerns, use [opencode@microsoft.com](mailto:opencode@microsoft.com)
-
-## Future Open Source Plans
-Once SDL requirements are met, this project may accept external contributions. Check back for updates on contribution policy changes.
+- **Issues & Feedback:** [GitHub Issues](https://github.com/microsoft/github-advisory-mcp/issues)
+- **Security concerns:** See [SECURITY.md](SECURITY.md)
+- **General questions:** [opencode@microsoft.com](mailto:opencode@microsoft.com)
