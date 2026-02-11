@@ -31,7 +31,7 @@ jobs:
       run: ls -lh dist/
 
     - name: Run unit tests
-      run: npm test
+      run: npx vitest run test/unit
 
   e2e:
     runs-on: ubuntu-latest
@@ -62,5 +62,5 @@ jobs:
       run: npm run test:e2e
       env:
         ADVISORY_REPO_PATH: ./external/advisory-database
-        MCP_PORT: "18006"
-        ADVISORY_API_PORT: "18005"
+        MCP_PORT: '18006'
+        ADVISORY_API_PORT: '18005'
