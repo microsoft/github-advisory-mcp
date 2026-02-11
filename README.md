@@ -529,11 +529,17 @@ services/mcp/advisory/
 - Multiple concurrent sessions
 - Search functionality
 
-## Next Steps
+## Contributing
 
-1. Create test client for MCP tool calls
-2. Test stdio mode
-3. Add to orchestrator configuration
-4. Create Service.ps1 for unified management
-5. Add Docker support
-6. Create integration tests
+This project does not accept external contributions (pull requests) at this time. Only verified committers from the Microsoft GitHub organization may contribute code.
+
+If you would like to get involved:
+
+- **Report bugs or request features** by [opening an issue](https://github.com/microsoft/github-advisory-mcp/issues/new)
+- **Reach out to the maintainers** at [opencode@microsoft.com](mailto:opencode@microsoft.com)
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+## Trademarks
+
+This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general). Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party's policies.
