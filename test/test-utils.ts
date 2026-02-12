@@ -33,9 +33,8 @@ export interface ListMcpToolsResponse {
 /**
  * Response shape when the tools/list call is delivered via
  * Server-Sent Events and parsed by `parseSSEResponse`.
- * Kept as `unknown` to reflect that it may differ from the JSON response.
  */
-export type ListMcpToolsSseResponse = unknown;
+export type ListMcpToolsSseResponse = SSEResponseData;
 
 /**
  * Wait for server to be ready by polling health endpoint
@@ -221,10 +220,20 @@ interface McpToolErrorResult {
 type McpToolResponse = McpToolSuccessResult | McpToolErrorResult;
 
 /**
- * Call MCP tool
+ * Counter for generating sequential JSON-RPC IDs for deterministic testing
  */
 let nextJsonRpcId = 1;
 
+/**
+ * Reset the JSON-RPC ID counter. Call this in test setup/teardown to ensure test isolation.
+ */
+export function resetJsonRpcId(): void {
+  nextJsonRpcId = 1;
+}
+
+/**
+ * Call MCP tool
+ */
 export async function callMCPTool(
   baseUrl: string,
   sessionId: string,
