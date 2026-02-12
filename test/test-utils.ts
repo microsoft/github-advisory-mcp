@@ -1,6 +1,43 @@
 import { spawn, ChildProcess } from "child_process";
 
 /**
+ * A single MCP tool description returned by the tools/list method.
+ * This is a minimal structural type to avoid using `any` while allowing
+ * the response to include additional properties.
+ */
+export interface McpToolDescription {
+  name: string;
+  description?: string;
+  // Allow additional properties without losing type safety.
+  [key: string]: unknown;
+}
+
+/**
+ * JSON-RPC 2.0 response for the tools/list method,
+ * when returned as a standard JSON HTTP response.
+ */
+export interface ListMcpToolsResponse {
+  jsonrpc: "2.0";
+  id: number | string | null;
+  result?: {
+    tools?: McpToolDescription[];
+    [key: string]: unknown;
+  };
+  error?: {
+    code: number;
+    message: string;
+    data?: unknown;
+  };
+}
+
+/**
+ * Response shape when the tools/list call is delivered via
+ * Server-Sent Events and parsed by `parseSSEResponse`.
+ * Kept as `unknown` to reflect that it may differ from the JSON response.
+ */
+export type ListMcpToolsSseResponse = unknown;
+
+/**
  * Wait for server to be ready by polling health endpoint
  */
 export async function waitForServer(
@@ -41,7 +78,9 @@ export async function isServerRunning(port: number): Promise<boolean> {
 /**
  * Parse SSE (Server-Sent Events) response
  */
-export function parseSSEResponse(sseText: string): any {
+export type SSEResponseData = Record<string, unknown>;
+
+export function parseSSEResponse(sseText: string): SSEResponseData {
   const lines = sseText.trim().split("\n");
   for (const line of lines) {
     if (line.startsWith("data: ")) {
@@ -159,14 +198,39 @@ export async function initializeMCPSession(
 }
 
 /**
+ * JSON-RPC response types for MCP tool calls
+ */
+interface McpToolError {
+  code: number;
+  message: string;
+  data?: unknown;
+}
+
+interface McpToolSuccessResult {
+  jsonrpc: "2.0";
+  id: number;
+  result: unknown;
+}
+
+interface McpToolErrorResult {
+  jsonrpc: "2.0";
+  id: number | null;
+  error: McpToolError;
+}
+
+type McpToolResponse = McpToolSuccessResult | McpToolErrorResult;
+
+/**
  * Call MCP tool
  */
+let nextJsonRpcId = 1;
+
 export async function callMCPTool(
   baseUrl: string,
   sessionId: string,
   toolName: string,
-  args: any
-): Promise<any> {
+  args: unknown
+): Promise<unknown | McpToolResponse> {
   const response = await fetch(baseUrl, {
     method: "POST",
     headers: {
@@ -181,7 +245,7 @@ export async function callMCPTool(
         name: toolName,
         arguments: args,
       },
-      id: Math.floor(Math.random() * 10000),
+      id: nextJsonRpcId++,
     }),
   });
 
@@ -195,7 +259,7 @@ export async function callMCPTool(
     const text = await response.text();
     return parseSSEResponse(text);
   } else {
-    return response.json();
+    return response.json() as Promise<McpToolResponse>;
   }
 }
 
@@ -205,7 +269,7 @@ export async function callMCPTool(
 export async function listMCPTools(
   baseUrl: string,
   sessionId: string
-): Promise<any> {
+): Promise<ListMcpToolsResponse | ListMcpToolsSseResponse> {
   const response = await fetch(baseUrl, {
     method: "POST",
     headers: {
@@ -230,6 +294,6 @@ export async function listMCPTools(
     const text = await response.text();
     return parseSSEResponse(text);
   } else {
-    return response.json();
+    return response.json() as Promise<ListMcpToolsResponse>;
   }
 }
