@@ -44,18 +44,18 @@ function buildQueryString(params: Record<string, unknown>): string {
  * List global security advisories from local database
  */
 export const listAdvisoriesSchema = z.object({
-  ghsa_id: z.string().optional().describe('GHSA identifier'),
-  cve_id: z.string().optional().describe('CVE identifier'),
+  ghsa_id: z.string().optional().describe('GHSA identifier (e.g., "GHSA-xxxx-xxxx-xxxx")'),
+  cve_id: z.string().optional().describe('CVE identifier (e.g., "CVE-2026-12345")'),
   ecosystem: z.enum(['rubygems', 'npm', 'pip', 'maven', 'nuget', 'composer', 'go', 'rust', 'erlang', 'actions', 'pub', 'other', 'swift']).optional().describe('Package ecosystem'),
   severity: z.enum(['low', 'medium', 'high', 'critical', 'unknown']).optional().describe('Severity level'),
   cwes: z.string().optional().describe('Comma-separated CWE identifiers (e.g., "79,284,22")'),
   is_withdrawn: z.boolean().optional().describe('Filter withdrawn advisories'),
-  affects: z.string().optional().describe('Package name filter'),
-  published: z.string().optional().describe('Published date or range'),
-  updated: z.string().optional().describe('Updated date or range'),
-  per_page: z.number().min(1).max(100).optional().describe('Results per page (max 100)'),
-  direction: z.enum(['asc', 'desc']).optional().describe('Sort direction'),
-  sort: z.enum(['updated', 'published']).optional().describe('Sort field')
+  affects: z.string().optional().describe('Package name filter (partial match, e.g., "express" matches "express-session")'),
+  published: z.string().optional().describe('Filter by published date in YYYY-MM-DD format. Single date returns that day only. Range format: "2026-01-01..2026-01-31" returns inclusive range. Examples: "2026-01-27" (single day), "2026-01-01..2026-01-31" (January 2026)'),
+  updated: z.string().optional().describe('Filter by updated date in YYYY-MM-DD format. Single date returns that day only. Range format: "2026-01-01..2026-01-31" returns inclusive range'),
+  per_page: z.number().min(1).max(100).optional().describe('Results per page (default: 30, max: 100)'),
+  direction: z.enum(['asc', 'desc']).optional().describe('Sort direction (default: desc, newest first)'),
+  sort: z.enum(['updated', 'published']).optional().describe('Sort field (default: published)')
 });
 
 export async function listAdvisories(params: unknown): Promise<CallToolResult> {
