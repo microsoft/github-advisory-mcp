@@ -91,7 +91,14 @@ describe("MCP Advisory Server E2E Tests", () => {
       if (!sessionId) {
         sessionId = await initializeMCPSession(baseUrl);
       }
-    });
+      // Warmup: trigger advisory database index build (reads all JSON files from disk).
+      // First call takes 60-90s to scan the full advisory-database repo;
+      // subsequent calls use the in-memory cache and complete in milliseconds.
+      await callMCPTool(baseUrl, sessionId, "list_advisories", {
+        ecosystem: "npm",
+        per_page: 1,
+      });
+    }, 120000); // 2 minutes for initial database index build
 
     it("should list npm advisories", async () => {
       const response = await callMCPTool(baseUrl, sessionId, "list_advisories", {
@@ -160,6 +167,81 @@ describe("MCP Advisory Server E2E Tests", () => {
           ).toBe(true);
         }
       }
+    });
+  });
+
+  describe("Date Range Filtering", () => {
+    beforeAll(async () => {
+      if (!sessionId) {
+        sessionId = await initializeMCPSession(baseUrl);
+      }
+    });
+
+    it("should filter by single date (exact day)", async () => {
+      // First, get some advisories to find a date with data
+      const response = await callMCPTool(baseUrl, sessionId, "list_advisories", {
+        per_page: 10,
+      });
+      const content = JSON.parse(response.result.content[0].text);
+      
+      if (content.advisories.length > 0) {
+        // Extract date from first advisory (YYYY-MM-DD)
+        const testDate = content.advisories[0].published_at.split('T')[0];
+        
+        // Query for that specific date
+        const dateResponse = await callMCPTool(baseUrl, sessionId, "list_advisories", {
+          published: testDate,
+          per_page: 50,
+        });
+        const dateContent = JSON.parse(dateResponse.result.content[0].text);
+        
+        // All results should be from that date only
+        dateContent.advisories.forEach((adv: any) => {
+          const advDate = adv.published_at.split('T')[0];
+          expect(advDate).toBe(testDate);
+        });
+      }
+    });
+
+    it("should filter by date range", async () => {
+      // Get recent advisories to find valid date range
+      const response = await callMCPTool(baseUrl, sessionId, "list_advisories", {
+        per_page: 20,
+        direction: 'desc',
+      });
+      const content = JSON.parse(response.result.content[0].text);
+      
+      if (content.advisories.length >= 2) {
+        // Use the range from oldest to newest in our sample
+        const dates = content.advisories.map((a: any) => a.published_at.split('T')[0]);
+        const startDate = dates[dates.length - 1]; // oldest
+        const endDate = dates[0]; // newest
+        
+        // Query with range
+        const rangeResponse = await callMCPTool(baseUrl, sessionId, "list_advisories", {
+          published: `${startDate}..${endDate}`,
+          per_page: 100,
+        });
+        const rangeContent = JSON.parse(rangeResponse.result.content[0].text);
+        
+        // All results should be within range (inclusive)
+        rangeContent.advisories.forEach((adv: any) => {
+          const advDate = adv.published_at.split('T')[0];
+          expect(advDate >= startDate).toBe(true);
+          expect(advDate <= endDate).toBe(true);
+        });
+      }
+    });
+
+    it("should return empty for date with no advisories", async () => {
+      // Use a far-future date that shouldn't have any advisories
+      const response = await callMCPTool(baseUrl, sessionId, "list_advisories", {
+        published: "2099-01-01",
+        per_page: 10,
+      });
+      const content = JSON.parse(response.result.content[0].text);
+      expect(content.count).toBe(0);
+      expect(content.advisories).toEqual([]);
     });
   });
 
