@@ -230,7 +230,7 @@ export async function callMCPTool(
   sessionId: string,
   toolName: string,
   args: unknown
-): Promise<unknown | McpToolResponse> {
+): Promise<McpToolResponse | SSEResponseData> {
   const response = await fetch(baseUrl, {
     method: "POST",
     headers: {
@@ -259,7 +259,8 @@ export async function callMCPTool(
     const text = await response.text();
     return parseSSEResponse(text);
   } else {
-    return response.json() as Promise<McpToolResponse>;
+    const jsonResponse = await response.json();
+    return jsonResponse as McpToolResponse;
   }
 }
 
@@ -294,6 +295,7 @@ export async function listMCPTools(
     const text = await response.text();
     return parseSSEResponse(text);
   } else {
-    return response.json() as Promise<ListMcpToolsResponse>;
+    const jsonResponse = await response.json();
+    return jsonResponse as ListMcpToolsResponse;
   }
 }
