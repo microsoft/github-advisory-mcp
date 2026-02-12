@@ -207,7 +207,7 @@ interface McpToolError {
 
 interface McpToolSuccessResult {
   jsonrpc: "2.0";
-  id: number;
+  id: number | string | null;
   result: unknown;
 }
 
