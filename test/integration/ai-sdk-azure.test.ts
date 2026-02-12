@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { ChildProcess } from "child_process";
+import type { ChildProcess } from "child_process";
 import { generateText } from "ai";
 import { createAzure } from "@ai-sdk/azure";
 import { randomUUID } from "crypto";
