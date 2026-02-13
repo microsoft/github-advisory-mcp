@@ -306,16 +306,18 @@ export class LocalRepositoryDataSource implements IAdvisoryDataSource {
    * Supports: "2026-01-27" (single day) or "2026-01-01..2026-01-31" (range)
    */
   private parseDateFilter(dateStr: string): { start: string; end: string } {
-    if (dateStr.includes('..')) {
-      const [start, end] = dateStr.split('..');
+    // Defense-in-depth: ensure dateStr is a string (HTTP query params can be arrays)
+    const str = Array.isArray(dateStr) ? String(dateStr[0]) : String(dateStr);
+    if (str.includes('..')) {
+      const [start, end] = str.split('..');
       // End date: include full day by using next day midnight
       const endDate = new Date(end + 'T00:00:00Z');
       endDate.setUTCDate(endDate.getUTCDate() + 1);
       return { start: start + 'T00:00:00Z', end: endDate.toISOString() };
     }
     // Single date: filter for that specific day
-    const startDate = new Date(dateStr + 'T00:00:00Z');
-    const endDate = new Date(dateStr + 'T00:00:00Z');
+    const startDate = new Date(str + 'T00:00:00Z');
+    const endDate = new Date(str + 'T00:00:00Z');
     endDate.setUTCDate(endDate.getUTCDate() + 1);
     return { start: startDate.toISOString(), end: endDate.toISOString() };
   }

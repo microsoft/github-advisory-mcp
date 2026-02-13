@@ -15,6 +15,17 @@ export interface LocalServerConfig {
 }
 
 /**
+ * Safely coerce an Express query parameter to a string.
+ * Express `req.query` values may be string, string[], or undefined.
+ * If the value is an array (repeated query param), the first element is used.
+ */
+function queryString(value: unknown): string | undefined {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
+  return undefined;
+}
+
+/**
  * Create and start a local HTTP server for advisory data
  */
 export async function createLocalAdvisoryServer(config: LocalServerConfig) {
@@ -40,21 +51,27 @@ export async function createLocalAdvisoryServer(config: LocalServerConfig) {
   // List advisories (mimics GET /advisories)
   app.get('/advisories', async (req: Request, res: Response) => {
     try {
+      const isWithdrawn = queryString(req.query.is_withdrawn);
+      const perPage = queryString(req.query.per_page);
+      const page = queryString(req.query.page);
+      const sortParam = queryString(req.query.sort);
+      const dirParam = queryString(req.query.direction);
+
       const options: AdvisoryListOptions = {
-        ghsa_id: req.query.ghsa_id as string,
-        cve_id: req.query.cve_id as string,
-        ecosystem: req.query.ecosystem as string,
-        severity: req.query.severity as string,
+        ghsa_id: queryString(req.query.ghsa_id),
+        cve_id: queryString(req.query.cve_id),
+        ecosystem: queryString(req.query.ecosystem),
+        severity: queryString(req.query.severity),
         cwes: req.query.cwes ? (Array.isArray(req.query.cwes) ? req.query.cwes as string[] : [req.query.cwes as string]) : undefined,
-        is_withdrawn: req.query.is_withdrawn === 'true' ? true : req.query.is_withdrawn === 'false' ? false : undefined,
-        affects: req.query.affects as string,
-        published: req.query.published as string,
-        updated: req.query.updated as string,
-        modified: req.query.modified as string,
-        per_page: req.query.per_page ? parseInt(req.query.per_page as string) : undefined,
-        page: req.query.page ? parseInt(req.query.page as string) : undefined,
-        sort: (req.query.sort as 'published' | 'updated') || 'published',
-        direction: (req.query.direction as 'asc' | 'desc') || 'desc',
+        is_withdrawn: isWithdrawn === 'true' ? true : isWithdrawn === 'false' ? false : undefined,
+        affects: queryString(req.query.affects),
+        published: queryString(req.query.published),
+        updated: queryString(req.query.updated),
+        modified: queryString(req.query.modified),
+        per_page: perPage ? parseInt(perPage) : undefined,
+        page: page ? parseInt(page) : undefined,
+        sort: (sortParam === 'published' || sortParam === 'updated') ? sortParam : 'published',
+        direction: (dirParam === 'asc' || dirParam === 'desc') ? dirParam : 'desc',
       };
 
       const advisories = await dataSource.listAdvisories(options);
