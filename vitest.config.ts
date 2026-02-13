@@ -5,6 +5,7 @@ export default defineConfig({
     globals: true,
     environment: "node",
     setupFiles: ["dotenv/config"],
+    globalSetup: ["./test/e2e/globalSetup.ts"],
     watch: false,
     passWithNoTests: true,
     testTimeout: 30000,

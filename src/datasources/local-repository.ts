@@ -302,6 +302,38 @@ export class LocalRepositoryDataSource implements IAdvisoryDataSource {
   }
 
   /**
+   * Parse date filter string and return start/end dates
+   * Supports: "2026-01-27" (single day) or "2026-01-01..2026-01-31" (range)
+   */
+  private parseDateFilter(dateStr: string): { start: string; end: string } {
+    // Defense-in-depth: ensure dateStr is a string (HTTP query params can be arrays)
+    const str = Array.isArray(dateStr) ? String(dateStr[0]) : String(dateStr);
+    if (str.includes('..')) {
+      const [start, end] = str.split('..');
+      // End date: include full day by using next day midnight
+      const endDate = new Date(end + 'T00:00:00Z');
+      endDate.setUTCDate(endDate.getUTCDate() + 1);
+      return { start: start + 'T00:00:00Z', end: endDate.toISOString() };
+    }
+    // Single date: filter for that specific day
+    const startDate = new Date(str + 'T00:00:00Z');
+    const endDate = new Date(str + 'T00:00:00Z');
+    endDate.setUTCDate(endDate.getUTCDate() + 1);
+    return { start: startDate.toISOString(), end: endDate.toISOString() };
+  }
+
+  /**
+   * Filter advisories by date range
+   */
+  private filterByDateRange(advisories: Advisory[], field: 'published_at' | 'updated_at', dateStr: string): Advisory[] {
+    const { start, end } = this.parseDateFilter(dateStr);
+    return advisories.filter(a => {
+      const date = a[field];
+      return date >= start && date < end;
+    });
+  }
+
+  /**
    * List advisories with optional filtering
    */
   async listAdvisories(options: AdvisoryListOptions = {}): Promise<Advisory[]> {
@@ -349,11 +381,11 @@ export class LocalRepositoryDataSource implements IAdvisoryDataSource {
     }
 
     if (options.published) {
-      results = results.filter(a => a.published_at >= options.published!);
+      results = this.filterByDateRange(results, 'published_at', options.published);
     }
 
     if (options.updated) {
-      results = results.filter(a => a.updated_at >= options.updated!);
+      results = this.filterByDateRange(results, 'updated_at', options.updated);
     }
 
     // Sort results

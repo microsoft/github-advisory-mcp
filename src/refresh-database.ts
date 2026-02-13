@@ -4,7 +4,7 @@
  */
 
 import { spawn } from "child_process";
-import { existsSync } from "fs";
+import { existsSync, mkdirSync } from "fs";
 import { join } from "path";
 import { createLogger } from "./logger.js";
 
@@ -90,7 +90,8 @@ export async function refreshAdvisoryDatabase(
       // Clone with depth=1 (shallow)
       const parentDir = join(repoPath, "..");
       const repoName = repoPath.split(/[/\\]/).pop() || "advisory-database";
-      
+      // Ensure parent directory exists (spawn fails with ENOENT if cwd is missing)
+      mkdirSync(parentDir, { recursive: true });      
       await runGit(
         ["clone", "--depth=1", "--branch=main", ADVISORY_REPO_URL, repoName],
         parentDir,
