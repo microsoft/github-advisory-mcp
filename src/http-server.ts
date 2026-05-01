@@ -68,10 +68,10 @@ function cleanupSession(sessionId: string): void {
   cleanupInProgress.add(sessionId);
   logger.info('Cleaning up session', { sessionId });
   try {
-    const transport = transports[sessionId];
+    const transport = transports.get(sessionId);
     if (transport) {
       // Remove from registry first and detach onclose to avoid recursive cleanup.
-      delete transports[sessionId];
+      transports.delete(sessionId);
       transport.onclose = undefined;
       try {
         transport.close();
@@ -79,9 +79,10 @@ function cleanupSession(sessionId: string): void {
         logger.warn('Error closing transport', { sessionId, error: error instanceof Error ? error.message : String(error) });
       }
     }
-    if (sessionTimeouts[sessionId]) {
-      clearTimeout(sessionTimeouts[sessionId]);
-      delete sessionTimeouts[sessionId];
+    const timeout = sessionTimeouts.get(sessionId);
+    if (timeout) {
+      clearTimeout(timeout);
+      sessionTimeouts.delete(sessionId);
     }
   } finally {
     cleanupInProgress.delete(sessionId);
@@ -92,13 +93,14 @@ function cleanupSession(sessionId: string): void {
  * Reset session timeout
  */
 function resetSessionTimeout(sessionId: string): void {
-  if (sessionTimeouts[sessionId]) {
-    clearTimeout(sessionTimeouts[sessionId]);
+  const existingTimeout = sessionTimeouts.get(sessionId);
+  if (existingTimeout) {
+    clearTimeout(existingTimeout);
   }
-  sessionTimeouts[sessionId] = setTimeout(() => {
+  sessionTimeouts.set(sessionId, setTimeout(() => {
     logger.info('Session timeout', { sessionId });
     cleanupSession(sessionId);
-  }, SESSION_TIMEOUT_MS);
+  }, SESSION_TIMEOUT_MS));
 }
 
 // Store local API server instance
@@ -166,9 +168,9 @@ app.post("/mcp", async (req: Request, res: Response) => {
   try {
     let transport: StreamableHTTPServerTransport;
 
-    if (sessionId && transports[sessionId]) {
+    if (sessionId && transports.has(sessionId)) {
       // Reuse existing transport and reset timeout
-      transport = transports[sessionId];
+      transport = transports.get(sessionId)!;
       resetSessionTimeout(sessionId);
       await transport.handleRequest(req, res, req.body);
     } else if (!sessionId && isInitializeRequest(req.body)) {
@@ -184,7 +186,7 @@ app.post("/mcp", async (req: Request, res: Response) => {
       });
 
       // Store transport
-      transports[newSessionId] = transport;
+      transports.set(newSessionId, transport);
       
       // Set up session timeout
       resetSessionTimeout(newSessionId);
