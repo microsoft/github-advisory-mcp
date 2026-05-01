@@ -51,6 +51,7 @@ const refreshIntervalMs = parseInt(process.env.ADVISORY_REFRESH_INTERVAL_MS || '
 // Store transports by session ID
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
 const sessionTimeouts: Record<string, NodeJS.Timeout> = {};
+const cleanupInProgress = new Set<string>();
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
 // Periodic refresh cleanup function
@@ -60,19 +61,30 @@ let stopPeriodicRefresh: (() => void) | null = null;
  * Clean up expired session
  */
 function cleanupSession(sessionId: string): void {
-  logger.info('Cleaning up session', { sessionId });
-  const transport = transports[sessionId];
-  if (transport) {
-    try {
-      transport.close();
-    } catch (error) {
-      logger.warn('Error closing transport', { sessionId, error: error instanceof Error ? error.message : String(error) });
-    }
-    delete transports[sessionId];
+  if (cleanupInProgress.has(sessionId)) {
+    return;
   }
-  if (sessionTimeouts[sessionId]) {
-    clearTimeout(sessionTimeouts[sessionId]);
-    delete sessionTimeouts[sessionId];
+
+  cleanupInProgress.add(sessionId);
+  logger.info('Cleaning up session', { sessionId });
+  try {
+    const transport = transports[sessionId];
+    if (transport) {
+      // Remove from registry first and detach onclose to avoid recursive cleanup.
+      delete transports[sessionId];
+      transport.onclose = undefined;
+      try {
+        transport.close();
+      } catch (error) {
+        logger.warn('Error closing transport', { sessionId, error: error instanceof Error ? error.message : String(error) });
+      }
+    }
+    if (sessionTimeouts[sessionId]) {
+      clearTimeout(sessionTimeouts[sessionId]);
+      delete sessionTimeouts[sessionId];
+    }
+  } finally {
+    cleanupInProgress.delete(sessionId);
   }
 }
 
