@@ -49,8 +49,8 @@ const refreshOnStart = process.env.ADVISORY_REFRESH_ON_START !== 'false'; // Def
 const refreshIntervalMs = parseInt(process.env.ADVISORY_REFRESH_INTERVAL_MS || '0'); // Default: disabled (0)
 
 // Store transports by session ID
-const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
-const sessionTimeouts: Record<string, NodeJS.Timeout> = {};
+const transports = new Map<string, StreamableHTTPServerTransport>();
+const sessionTimeouts = new Map<string, NodeJS.Timeout>();
 const cleanupInProgress = new Set<string>();
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
