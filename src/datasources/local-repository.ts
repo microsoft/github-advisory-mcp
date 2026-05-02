@@ -302,22 +302,50 @@ export class LocalRepositoryDataSource implements IAdvisoryDataSource {
   }
 
   /**
-   * Parse date filter string and return start/end dates
-   * Supports: "2026-01-27" (single day) or "2026-01-01..2026-01-31" (range)
+   * Parse date filter string and return start/end dates.
+   * Supports: "2026-01-27" (single day) or "2026-01-01..2026-01-31" (range).
+   *
+   * Throws an Error with a descriptive message when the input is malformed:
+   *   - more than two parts in a range
+   *   - missing start or end in a range
+   *   - invalid calendar date (e.g. "2026-13-45")
+   *   - reversed range (start > end)
    */
   private parseDateFilter(dateStr: string): { start: string; end: string } {
     // Defense-in-depth: ensure dateStr is a string (HTTP query params can be arrays)
     const str = Array.isArray(dateStr) ? String(dateStr[0]) : String(dateStr);
+
     if (str.includes('..')) {
-      const [start, end] = str.split('..');
-      // End date: include full day by using next day midnight
+      const parts = str.split('..');
+      if (parts.length !== 2 || !parts[0] || !parts[1]) {
+        throw new Error(
+          `Invalid date range "${str}". Expected "YYYY-MM-DD..YYYY-MM-DD".`
+        );
+      }
+      const [start, end] = parts;
+      const startDate = new Date(start + 'T00:00:00Z');
       const endDate = new Date(end + 'T00:00:00Z');
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        throw new Error(
+          `Invalid date in range "${str}". Each side must be YYYY-MM-DD.`
+        );
+      }
+      if (startDate.getTime() > endDate.getTime()) {
+        throw new Error(
+          `Invalid date range "${str}": start date must be less than or equal to end date.`
+        );
+      }
+      // End date: include full day by using next day midnight (end is exclusive)
       endDate.setUTCDate(endDate.getUTCDate() + 1);
-      return { start: start + 'T00:00:00Z', end: endDate.toISOString() };
+      return { start: startDate.toISOString(), end: endDate.toISOString() };
     }
+
     // Single date: filter for that specific day
     const startDate = new Date(str + 'T00:00:00Z');
     const endDate = new Date(str + 'T00:00:00Z');
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new Error(`Invalid date "${str}". Expected YYYY-MM-DD.`);
+    }
     endDate.setUTCDate(endDate.getUTCDate() + 1);
     return { start: startDate.toISOString(), end: endDate.toISOString() };
   }

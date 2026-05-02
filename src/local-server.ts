@@ -119,16 +119,17 @@ export async function createLocalAdvisoryServer(config: LocalServerConfig) {
   // Search advisories (custom endpoint for convenience)
   app.get('/search', async (req: Request, res: Response) => {
     try {
-      const query = req.query.q as string;
+      const query = queryString(req.query.q);
       if (!query) {
         res.status(400).json({ error: 'Missing query parameter: q' });
         return;
       }
 
+      const perPage = queryString(req.query.per_page);
       const options: AdvisoryListOptions = {
-        ecosystem: req.query.ecosystem as string,
-        severity: req.query.severity as string,
-        per_page: req.query.per_page ? parseInt(req.query.per_page as string) : undefined,
+        ecosystem: queryString(req.query.ecosystem),
+        severity: queryString(req.query.severity),
+        per_page: perPage ? parseInt(perPage, 10) : undefined,
       };
 
       const advisories = await dataSource.searchAdvisories!(query, options);
