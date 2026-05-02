@@ -20,6 +20,95 @@ When you submit a pull request, a CLA bot will automatically determine whether y
 
 All commits must be signed and verified. The `main` branch is protected and requires pull request reviews, passing CI status checks, and signed commits.
 
+## Signing Commits — Note for Microsoft Committers
+
+The `main` branch protection requires every commit on a PR to be cryptographically signed and show as **Verified** on GitHub. If a commit on your PR shows as **Unverified**, the PR will be blocked from merging.
+
+This section documents the SSH commit signing setup that works for Microsoft committers using their existing SSH key.
+
+### Prerequisites
+
+1. An existing SSH key (e.g., `~/.ssh/id_rsa.pub` or `~/.ssh/id_ed25519.pub`).
+2. Your `microsoft.com` (or other corporate) email added and **verified** on GitHub: <https://github.com/settings/emails>.
+   - GitHub will only mark a signature as Verified if the commit author email is on this list and verified.
+   - If you cannot verify a corporate email, use your `@users.noreply.github.com` GitHub-provided email as the commit author email.
+
+### Step 1: Register the SSH key as a Signing Key
+
+GitHub treats Authentication keys and Signing keys as separate entries, even when the underlying key contents are identical.
+
+1. Go to <https://github.com/settings/ssh/new>.
+2. **Title**: e.g., `MyMachine-SIGNING-KEY`.
+3. **Key type**: select **Signing Key** (not Authentication Key).
+4. Paste the contents of your public key file (`id_rsa.pub` or `id_ed25519.pub`).
+5. Click **Add SSH key**.
+
+You can keep the same key registered as both an Authentication key and a Signing key — they are independent entries.
+
+### Step 2: Configure git to sign commits with SSH
+
+Run these in the repository (or globally with `--global` if you want signing everywhere):
+
+```powershell
+git config gpg.format ssh
+git config user.signingkey "$HOME\.ssh\id_rsa.pub"   # or id_ed25519.pub
+git config commit.gpgsign true
+git config tag.gpgsign true
+```
+
+Verify the commit author identity matches a verified email on your GitHub account:
+
+```powershell
+git config user.email     # must match a verified email on https://github.com/settings/emails
+git config user.name
+```
+
+### Step 3: Sign new commits
+
+Once configured, normal `git commit` will sign automatically. To verify locally that signatures are embedded:
+
+```powershell
+git cat-file -p HEAD | Select-Object -First 10
+# Expect to see a `gpgsig -----BEGIN SSH SIGNATURE-----` block.
+```
+
+### Step 4: Re-sign existing unsigned PR commits
+
+If you already pushed a PR with unsigned commits and the protection is now blocking the merge, re-sign all commits on the branch in place:
+
+```powershell
+git switch <your-pr-branch>
+git fetch origin
+git rebase origin/main --exec "git commit --amend --no-edit -S"
+git push --force-with-lease
+```
+
+This rewrites every commit since `origin/main` to include an SSH signature. Force-with-lease is required because rebasing changes the commit hashes.
+
+### Troubleshooting
+
+- **Commit shows as "Unverified" with `unknown signature` reason**
+  - The SSH key is registered as Authentication only. Re-register the same key with **Key type = Signing Key** at <https://github.com/settings/ssh/new>.
+
+- **Commit shows as "Unverified" because email is not associated with a verified account**
+  - The commit author email is not on <https://github.com/settings/emails> as verified. Either verify the email on GitHub, or change `git config user.email` to a verified address (e.g., your `@users.noreply.github.com`) and re-sign as in Step 4.
+
+- **Local `git log --show-signature` prints `gpg.ssh.allowedSignersFile needs to be configured`**
+  - This is only a *local* verification message and does **not** affect GitHub's verified status. To enable local verification:
+
+    ```powershell
+    "$(git config user.email) namespaces=`"git`" $(Get-Content $HOME\.ssh\id_rsa.pub)" | Out-File -Encoding ascii -Append $HOME\.ssh\allowed_signers
+    git config gpg.ssh.allowedSignersFile "$HOME\.ssh\allowed_signers"
+    ```
+
+- **`git commit` fails with `gpg failed to sign the data` when `gpg.format=ssh`**
+  - Ensure `user.signingkey` points at a `.pub` file that exists, and the matching private key is loadable by `ssh-keygen -Y sign` (Git for Windows uses the bundled `ssh-keygen`).
+
+### References
+
+- GitHub docs: [About commit signature verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification)
+- GitHub docs: [Signing commits with SSH](https://docs.github.com/en/authentication/managing-commit-signature-verification/telling-git-about-your-signing-key#telling-git-about-your-ssh-key)
+
 ## Code of Conduct
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
