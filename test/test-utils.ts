@@ -67,6 +67,7 @@ export async function startMCPServer(
       MCP_PORT: port.toString(),
       ADVISORY_API_PORT: apiPort.toString(),
       ADVISORY_REPO_PATH: repoPath,
+      ADVISORY_REFRESH_ON_START: "false", // globalSetup handles cloning
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
