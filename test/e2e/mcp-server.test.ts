@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { ChildProcess } from "child_process";
+import { ecosystemMatches } from "../../src/datasources/local-repository.js";
 import {
   startMCPServer,
   stopMCPServer,
@@ -114,7 +115,9 @@ describe("MCP Advisory Server E2E Tests", () => {
       expect(advisory).toHaveProperty("summary");
       expect(advisory).toHaveProperty("severity");
       expect(advisory.affected_packages).toBeInstanceOf(Array);
-      expect(advisory.affected_packages[0].ecosystem).toBe("npm");
+      expect(
+        advisory.affected_packages.some((p: any) => ecosystemMatches(p.ecosystem, "npm"))
+      ).toBe(true);
     });
 
     it("should filter by severity", async () => {
@@ -145,20 +148,21 @@ describe("MCP Advisory Server E2E Tests", () => {
     });
 
     it("should list multiple ecosystems", async () => {
-      for (const ecosystem of ["npm", "pip", "maven", "go"]) {
+      // Regression guard: ecosystem enum values must map to OSV names in the data,
+      // so each ecosystem must return results (was silently 0 for all but npm).
+      for (const ecosystem of ["npm", "pip", "maven", "go", "composer"]) {
         const response = await callMCPTool(baseUrl, sessionId, "list_advisories", {
           ecosystem,
           per_page: 1,
         });
 
         const content = JSON.parse(response.result.content[0].text);
-        if (content.advisories.length > 0) {
-          expect(
-            content.advisories[0].affected_packages.some(
-              (p: any) => p.ecosystem === ecosystem
-            )
-          ).toBe(true);
-        }
+        expect(content.advisories.length).toBeGreaterThan(0);
+        expect(
+          content.advisories[0].affected_packages.some(
+            (p: any) => ecosystemMatches(p.ecosystem, ecosystem)
+          )
+        ).toBe(true);
       }
     });
   });

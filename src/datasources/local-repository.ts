@@ -64,6 +64,33 @@ interface OSVAdvisory {
 }
 
 /**
+ * Maps the GitHub-style ecosystem names accepted by the tool schema to the OSV
+ * ecosystem names actually stored in advisory-database (differs in name/casing).
+ */
+const ECOSYSTEM_ALIASES: Record<string, string> = {
+  npm: 'npm',
+  pip: 'PyPI',
+  maven: 'Maven',
+  nuget: 'NuGet',
+  rubygems: 'RubyGems',
+  composer: 'Packagist',
+  go: 'Go',
+  rust: 'crates.io',
+  erlang: 'Hex',
+  pub: 'Pub',
+  swift: 'SwiftURL',
+  actions: 'GitHub Actions',
+};
+
+/**
+ * Case-insensitive ecosystem match that also accepts the OSV name directly.
+ */
+export function ecosystemMatches(packageEcosystem: string, requested: string): boolean {
+  const canonical = ECOSYSTEM_ALIASES[requested.toLowerCase()] ?? requested;
+  return packageEcosystem.toLowerCase() === canonical.toLowerCase();
+}
+
+/**
  * Data source that reads from local cloned github/advisory-database repository
  */
 export class LocalRepositoryDataSource implements IAdvisoryDataSource {
@@ -320,7 +347,7 @@ export class LocalRepositoryDataSource implements IAdvisoryDataSource {
 
     if (options.ecosystem) {
       results = results.filter(a =>
-        a.vulnerabilities.some(v => v.package.ecosystem === options.ecosystem)
+        a.vulnerabilities.some(v => ecosystemMatches(v.package.ecosystem, options.ecosystem!))
       );
     }
 
@@ -411,7 +438,7 @@ export class LocalRepositoryDataSource implements IAdvisoryDataSource {
     // Apply all filters from listAdvisories
     if (options.ecosystem) {
       results = results.filter(a =>
-        a.vulnerabilities.some(v => v.package.ecosystem === options.ecosystem)
+        a.vulnerabilities.some(v => ecosystemMatches(v.package.ecosystem, options.ecosystem!))
       );
     }
 
