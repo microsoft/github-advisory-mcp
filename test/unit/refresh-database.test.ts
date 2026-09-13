@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { spawn, ChildProcess } from "child_process";
 import { existsSync } from "fs";
+import { join } from "path";
 import {
   refreshAdvisoryDatabase,
   startPeriodicRefresh,
@@ -91,7 +92,7 @@ describe("refresh-database", () => {
       expect(mockSpawn).toHaveBeenCalledWith(
         "git",
         expect.arrayContaining(["clone", "--depth=1", "--branch=main"]),
-        expect.objectContaining({ cwd: "/path/to" })
+        expect.objectContaining({ cwd: join("/path/to/advisory-database", "..") })
       );
     });
 

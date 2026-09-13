@@ -71,7 +71,7 @@ export async function createLocalAdvisoryServer(config: LocalServerConfig) {
   // Get specific advisory (mimics GET /advisories/{ghsa_id})
   app.get('/advisories/:ghsa_id', async (req: Request, res: Response) => {
     try {
-      const advisory = await dataSource.getAdvisory(req.params.ghsa_id);
+      const advisory = await dataSource.getAdvisory(req.params.ghsa_id as string);
       
       // Return 404 if advisory not found (GitHub API behavior)
       if (advisory === null) {
