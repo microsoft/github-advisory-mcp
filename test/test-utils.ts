@@ -67,6 +67,8 @@ export async function startMCPServer(
       MCP_PORT: port.toString(),
       ADVISORY_API_PORT: apiPort.toString(),
       ADVISORY_REPO_PATH: repoPath,
+      // Tests supply a pre-cloned DB; skip the blocking startup network refresh.
+      ADVISORY_REFRESH_ON_START: "false",
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
