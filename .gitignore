@@ -2,6 +2,9 @@
 .env
 .env.*
 
+# Local npm registry/proxy config (may contain auth tokens)
+.npmrc
+
 # Node modules
 node_modules/
 
