@@ -129,10 +129,10 @@ Or query advisories directly:
 @workspace Get details for GHSA-jc85-fpwf-qm7x
 ```
 
-### Unit Tests (Automated)
+### Automated Tests
 ```bash
-npm test           # All tests
-npm run test:e2e   # E2E tests (18 tests, ~9.5s after database cached)
+npx vitest run test/unit   # fast, hermetic unit tests (this is what `npm test` runs)
+npm run test:e2e           # end-to-end MCP tests (needs the advisory database)
 ```
 
 ### Health Checks
@@ -144,71 +144,10 @@ Invoke-RestMethod http://localhost:18006/health
 Invoke-RestMethod http://localhost:18005/health
 ```
 
-### Test Local REST API Directly
+### Test the REST API and MCP protocol directly
 
-**List advisories by ecosystem:**
-```powershell
-Invoke-RestMethod "http://localhost:18005/advisories?ecosystem=npm&per_page=5"
-```
-
-**Get specific advisory:**
-```powershell
-Invoke-RestMethod "http://localhost:18005/advisories/GHSA-jc85-fpwf-qm7x"
-```
-
-**Search advisories:**
-```powershell
-Invoke-RestMethod "http://localhost:18005/search?q=express"
-```
-
-### Test MCP Tools
-
-**Initialize Session:**
-```powershell
-$body = @{
-  jsonrpc = "2.0"
-  id = 1
-  method = "initialize"
-  params = @{
-    protocolVersion = "2024-11-05"
-    capabilities = @{}
-    clientInfo = @{ name = "test-client"; version = "1.0.0" }
-  }
-} | ConvertTo-Json -Depth 10
-
-$response = Invoke-RestMethod -Uri "http://localhost:18006/mcp" -Method POST -Body $body -ContentType "application/json"
-$sessionId = $response.result.sessionId
-```
-
-**List Tools:**
-```powershell
-$body = @{
-  jsonrpc = "2.0"
-  id = 2
-  method = "tools/list"
-} | ConvertTo-Json
-
-Invoke-RestMethod -Uri "http://localhost:18006/mcp" -Method POST -Body $body -ContentType "application/json" -Headers @{"Mcp-Session-Id"=$sessionId}
-```
-
-**Call list_advisories:**
-```powershell
-$body = @{
-  jsonrpc = "2.0"
-  id = 3
-  method = "tools/call"
-  params = @{
-    name = "list_advisories"
-    arguments = @{
-      ecosystem = "npm"
-      severity = "high"
-      per_page = 5
-    }
-  }
-} | ConvertTo-Json -Depth 10
-
-Invoke-RestMethod -Uri "http://localhost:18006/mcp" -Method POST -Body $body -ContentType "application/json" -Headers @{"Mcp-Session-Id"=$sessionId}
-```
+Low-level REST and raw MCP JSON-RPC request recipes (health checks, session
+initialize, `tools/list`, `tools/call`) live in [docs/http-api.md](docs/http-api.md).
 
 ## Environment Variables
 
@@ -294,18 +233,8 @@ All MCP tool parameters are validated using **Zod schemas**:
 - **HTTP mode**: Consider adding rate limiting if exposed beyond localhost
 - **Database queries**: Inherently rate-limited by disk I/O (hundreds of thousands of files)
 
-**Future (HTTP mode):**
-```typescript
-// Example: express-rate-limit for HTTP endpoints
-import rateLimit from 'express-rate-limit';
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
-});
-
-app.use('/mcp', limiter);
-```
+**Future (HTTP mode):** add rate limiting if you expose the server beyond
+localhost — see [docs/integration.md](docs/integration.md).
 
 ### Session Security
 
@@ -325,27 +254,8 @@ app.use('/mcp', limiter);
 
 ## Integration with Orchestrator
 
-The MCP Advisory server can be integrated with orchestration platforms:
-
-```python
-from mcp import ClientSession
-from mcp.client.stdio import stdio_client
-
-# Connect to MCP Advisory server
-async with stdio_client(
-    command="node",
-    args=["dist/index.js"],
-    env={
-        "ADVISORY_REPO_PATH": "/path/to/advisory-database"
-    }
-) as (read, write):
-    async with ClientSession(read, write) as session:
-        # List npm advisories
-        result = await session.call_tool(
-            "list_advisories",
-            arguments={"ecosystem": "npm", "per_page": 10}
-        )
-```
+The stdio MCP server can be driven from any MCP client. A Python client example
+and an HTTP rate-limiting snippet are in [docs/integration.md](docs/integration.md).
 
 ## Port Allocation
 

@@ -1,12 +1,17 @@
-# Semantic search prototype (local-only, advisory-specific)
+# Semantic search — how to run (code layout)
 
-> Prototype on branch `proto/semantic-search`. Not wired into the MCP tools yet.
-> No external engine or service; runs entirely on-device.
+> Prototype on branch `proto/semantic-search`. Runs entirely on-device (no external
+> engine or service).
+>
+> **Design & rationale live in a separate doc:**
+> [`docs/semantic-search-design.md`](../../docs/semantic-search-design.md). This file
+> is the practical "build and run the index" guide next to the code.
 
 Hybrid retrieval for advisories: local embeddings + BM25, fused with Reciprocal
-Rank Fusion, then a field-aware rerank. Advisory-specific (uses GHSA/CVE ids,
-summary, CWEs, affected packages, ecosystem, severity) — not a general-purpose
-memory store.
+Rank Fusion, then a field-aware + temporal rerank. Exposed as the `semantic_search`
+MCP tool (stdio + HTTP), alongside `list_advisories` / `get_advisory`.
+Advisory-specific (GHSA/CVE ids, summary, CWEs, affected packages, ecosystem,
+severity) — not a general-purpose memory store.
 
 ## Pieces
 
