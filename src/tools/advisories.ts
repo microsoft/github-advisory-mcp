@@ -5,10 +5,13 @@ import { createLogger } from '../logger.js';
 const logger = createLogger('Tools');
 
 /**
- * Local advisory server configuration
- * Set via environment variable or default to local instance
+ * Local advisory server configuration.
+ * Derived from the same ADVISORY_API_HOST/PORT the server binds, so a custom
+ * port reaches the right instance; ADVISORY_API_BASE overrides the full URL.
  */
-const LOCAL_API_BASE = process.env.ADVISORY_API_BASE || 'http://localhost:18005';
+const LOCAL_API_BASE =
+  process.env.ADVISORY_API_BASE ||
+  `http://${process.env.ADVISORY_API_HOST || '127.0.0.1'}:${process.env.ADVISORY_API_PORT || '18005'}`;
 
 /**
  * Fetch data from local advisory API
