@@ -352,11 +352,6 @@ async with stdio_client(
 - **18005**: Local REST API (Express server)
 - **18006**: MCP HTTP streaming endpoint
 
-**Avoids conflicts with:**
-- 18004: MCP Coder
-- 3333: Inspector MCP
-- 3500: Memory Service
-
 ## Troubleshooting
 
 ### Database Clone Failures
