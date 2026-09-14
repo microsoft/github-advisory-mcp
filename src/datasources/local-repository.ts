@@ -91,6 +91,31 @@ export function ecosystemMatches(packageEcosystem: string, requested: string): b
 }
 
 /**
+ * Normalize a CWE token to canonical `CWE-<n>` (uppercase), accepting bare
+ * numbers (`89`) or already-prefixed ids (`CWE-89`).
+ */
+export function normalizeCwe(token: string): string {
+  const t = String(token).trim();
+  return (/^cwe-/i.test(t) ? t : `CWE-${t}`).toUpperCase();
+}
+
+/**
+ * True if an advisory's CWE ids intersect the requested filter. Requested
+ * values may be an array and/or comma-separated, bare or prefixed.
+ */
+export function cweFilterMatches(advisoryCweIds: string[], requested: string[]): boolean {
+  const wanted = new Set(
+    requested
+      .flatMap(c => String(c).split(','))
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(normalizeCwe)
+  );
+  if (wanted.size === 0) return true;
+  return advisoryCweIds.some(id => wanted.has(normalizeCwe(id)));
+}
+
+/**
  * Data source that reads from local cloned github/advisory-database repository
  */
 export class LocalRepositoryDataSource implements IAdvisoryDataSource {
@@ -359,7 +384,7 @@ export class LocalRepositoryDataSource implements IAdvisoryDataSource {
 
     if (options.cwes && options.cwes.length > 0) {
       results = results.filter(a =>
-        a.cwes.some(cwe => options.cwes!.includes(cwe.cwe_id))
+        cweFilterMatches(a.cwes.map(cwe => cwe.cwe_id), options.cwes!)
       );
     }
 
