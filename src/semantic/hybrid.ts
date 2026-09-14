@@ -16,6 +16,7 @@ export interface SearchHit {
   severity: string;
   cweIds: string[];
   packages: string[];
+  ecosystems: string[];
   published: number;
   scores: { rrf: number; vector: number; bm25Rank: number; rerank: number; temporal: number; final: number };
 }
@@ -93,6 +94,7 @@ export async function hybridSearch(
         severity: doc.severity,
         cweIds: doc.cweIds,
         packages: doc.packages,
+        ecosystems: doc.ecosystems,
         published: doc.published,
         scores: {
           rrf: rrfScore,
