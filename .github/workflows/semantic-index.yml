@@ -1,0 +1,92 @@
+name: Semantic Index (prototype)
+
+# Prototype pipeline for building the local semantic-search index.
+# Push/dispatch -> builds a (small by default) index and uploads it as an artifact.
+# The production weekly job would instead commit the index via git-lfs (see below)
+# and enable the `schedule` trigger — that must live on the default branch.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Advisories to embed (0 = all reviewed ~35k; default 2000 for a quick test)"
+        required: false
+        default: "2000"
+  push:
+    branches: [ci/semantic-index-prototype]
+    paths: [".github/workflows/semantic-index.yml"]
+  # Weekly schedule only fires from the default branch — enable after merge to main:
+  # schedule:
+  #   - cron: "0 6 * * 1"
+
+permissions:
+  contents: read   # artifact upload only; the commit-back variant needs contents: write
+
+jobs:
+  build-index:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120   # 2h budget; a full 35k rebuild fits comfortably
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Clone advisory database (shallow)
+        run: |
+          git clone --depth=1 --branch=main \
+            https://github.com/github/advisory-database.git external/advisory-database
+
+      # Cache the ONNX model weights between runs (miss -> downloaded from HF).
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/semantic-model
+          key: semantic-model-minilm-v1
+
+      - name: Build semantic index
+        env:
+          ADVISORY_REPO_PATH: ./external/advisory-database
+          SEMANTIC_MODEL_CACHE: ~/.cache/semantic-model
+          SEMANTIC_ALLOW_REMOTE: "true"   # CI runner may fetch the model (no corp block)
+        run: |
+          LIMIT="${{ github.event.inputs.limit }}"
+          LIMIT="${LIMIT:-2000}"          # push/unset -> quick test size
+          if [ "$LIMIT" = "0" ]; then
+            node dist/semantic/build-index.js
+          else
+            node dist/semantic/build-index.js --limit "$LIMIT"
+          fi
+
+      - name: Index stats
+        run: |
+          ls -lh .semantic-index
+          echo "---- meta.json ----"
+          cat .semantic-index/meta.json
+
+      - name: Upload index artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-index
+          path: .semantic-index/
+          retention-days: 7
+
+      # --- Production weekly variant (needs `permissions: contents: write` and,
+      #     if main is protected, an admin-approved bot push). Sketch only:
+      #
+      # - name: Publish via git-lfs
+      #   run: |
+      #     git lfs install
+      #     git lfs track ".semantic-index/embeddings.bin" ".semantic-index/bm25.json"
+      #     git add -f .gitattributes .semantic-index
+      #     git -c user.name=ci -c user.email=ci@users.noreply.github.com \
+      #         commit -m "chore(semantic): weekly index @ $(cat .semantic-index/meta.json | jq -r .dbCommit)"
+      #     git push
