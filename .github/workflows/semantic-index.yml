@@ -1,0 +1,95 @@
+name: Semantic Index (weekly refresh)
+
+# Rebuilds the local semantic-search index weekly and publishes it as a rolling
+# Release asset (`semantic-index-latest`). Consumers download + extract it instead of
+# re-embedding the corpus. A Release asset is used (not an LFS commit to `main`)
+# because `main` is protected (signed commits + required PR), so a scheduled job
+# cannot push to it — and it keeps the ~96 MB blob off every clone.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Advisories to embed (0 = all reviewed ~35k; use a small number for a test)"
+        required: false
+        default: "0"
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC — schedule only fires from the default branch
+
+permissions:
+  contents: write # create/update the rolling Release asset
+
+concurrency:
+  group: semantic-index
+  cancel-in-progress: false
+
+jobs:
+  build-index:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60 # a full ~35k rebuild fits comfortably (~30 min budget)
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Clone advisory database (shallow)
+        run: |
+          git clone --depth=1 --branch=main \
+            https://github.com/github/advisory-database.git external/advisory-database
+
+      # Cache the ONNX model weights between runs (miss -> downloaded from HF).
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/semantic-model
+          key: semantic-model-minilm-v1
+
+      - name: Build semantic index
+        env:
+          ADVISORY_REPO_PATH: ./external/advisory-database
+          SEMANTIC_MODEL_CACHE: ~/.cache/semantic-model
+          SEMANTIC_ALLOW_REMOTE: "true" # CI runner may fetch the model (no corp block)
+        run: |
+          LIMIT="${{ github.event.inputs.limit }}"
+          LIMIT="${LIMIT:-0}"
+          if [ "$LIMIT" = "0" ]; then
+            node dist/semantic/build-index.js
+          else
+            node dist/semantic/build-index.js --limit "$LIMIT"
+          fi
+
+      - name: Package index
+        run: |
+          echo "---- meta.json ----"; cat .semantic-index/meta.json
+          tar -czf semantic-index.tar.gz -C .semantic-index .
+          ls -lh semantic-index.tar.gz
+
+      - name: Publish rolling Release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          DBC=$(node -e "process.stdout.write(String((require('./.semantic-index/meta.json').dbCommit)||'unknown'))")
+          NOTES="Prebuilt local semantic-search index (embeddings.bin + bm25.json + docs.json + meta.json). Rebuilt weekly. advisory-database @ ${DBC}. Extract into .semantic-index/."
+          if gh release view semantic-index-latest >/dev/null 2>&1; then
+            gh release upload semantic-index-latest semantic-index.tar.gz --clobber
+            gh release edit semantic-index-latest --notes "$NOTES"
+          else
+            gh release create semantic-index-latest semantic-index.tar.gz \
+              --title "Semantic index (latest)" --notes "$NOTES"
+          fi
+
+      - name: Upload workflow artifact (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-index
+          path: .semantic-index/
+          retention-days: 14

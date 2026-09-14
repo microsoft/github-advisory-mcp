@@ -3,6 +3,23 @@
 Status: prototype (`proto/semantic-search`). Applies to the local hybrid search
 index in `src/semantic/` (see its README).
 
+## Implemented
+
+`.github/workflows/semantic-index.yml` runs **weekly** (`cron: "0 6 * * 1"`, plus
+manual `workflow_dispatch`): it rebuilds the reviewed-tier index and publishes it as a
+rolling GitHub **Release asset** `semantic-index-latest` (`semantic-index.tar.gz`).
+A Release asset is used rather than an LFS commit to `main` because `main` is protected
+(signed commits + required PR), so a scheduled job cannot push to it — and it keeps the
+~96 MB blob off every clone. To consume:
+
+```bash
+gh release download semantic-index-latest -p semantic-index.tar.gz
+mkdir -p .semantic-index && tar -xzf semantic-index.tar.gz -C .semantic-index
+```
+
+The git-lfs channel below remains a valid alternative if you prefer the index to live
+in-tree (on a dedicated, unprotected branch).
+
 ## Why redistribute at all
 
 Building the reviewed-tier index (~35k advisories) is a one-off CPU cost
