@@ -56,16 +56,16 @@
     "cors": "^2.8.6",
     "express": "^5.0.1",
     "winston": "^3.18.3",
-    "zod": "^4.5.4"
+    "zod": "^4.6.2"
   },
   "devDependencies": {
-    "@ai-sdk/azure": "^4.0.63",
+    "@ai-sdk/azure": "^4.0.68",
     "@azure/identity": "^4.13.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
-    "@types/node": "^26.4.1",
+    "@types/node": "^26.5.1",
     "@vitest/coverage-v8": "^4.1.11",
-    "ai": "^7.0.93",
+    "ai": "^7.0.97",
     "dotenv": "^17.4.2",
     "typescript": "^5.9.3",
     "vitest": "^4.1.11"
