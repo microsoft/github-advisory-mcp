@@ -51,6 +51,8 @@ export async function createLocalAdvisoryServer(config: LocalServerConfig) {
         published: req.query.published as string,
         updated: req.query.updated as string,
         modified: req.query.modified as string,
+        type: (req.query.type as 'reviewed' | 'unreviewed' | 'all') || undefined,
+        web_app_only: req.query.web_app_only === 'true' ? true : undefined,
         per_page: req.query.per_page ? parseInt(req.query.per_page as string) : undefined,
         page: req.query.page ? parseInt(req.query.page as string) : undefined,
         sort: (req.query.sort as 'published' | 'updated') || 'published',

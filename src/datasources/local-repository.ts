@@ -116,6 +116,38 @@ export function cweFilterMatches(advisoryCweIds: string[], requested: string[]):
 }
 
 /**
+ * Heuristic set of CWEs that denote web-application vulnerability classes
+ * (OWASP-aligned: injection, XSS, SSRF/CSRF, path traversal, auth/z, session,
+ * deserialization, request smuggling, etc.). Used to categorize web-app vs
+ * cloud/local issues. Extend as needed.
+ */
+const WEB_APP_CWES: Set<string> = new Set(
+  [
+    // Injection
+    79, 89, 77, 78, 90, 91, 93, 94, 95, 113, 116, 564, 917, 943, 1336, 1333,
+    // Path / file
+    22, 23, 36, 73, 98, 434, 552, 610,
+    // Request forgery / redirect / UI redress
+    352, 601, 918, 1021,
+    // XML
+    611, 776, 827,
+    // AuthN / AuthZ / session / secrets-over-web
+    287, 306, 384, 522, 613, 620, 639, 640, 862, 863, 1275,
+    // Info exposure over web
+    200, 209, 532, 548,
+    // Deserialization / parsing / request handling
+    347, 345, 444, 502,
+  ].map(n => `CWE-${n}`)
+);
+
+/**
+ * True if the advisory looks like a web-application vulnerability (by CWE).
+ */
+export function isWebAppAdvisory(cweIds: string[]): boolean {
+  return cweIds.some(id => WEB_APP_CWES.has(normalizeCwe(id)));
+}
+
+/**
  * Data source that reads from local cloned github/advisory-database repository
  */
 export class LocalRepositoryDataSource implements IAdvisoryDataSource {
@@ -226,7 +258,12 @@ export class LocalRepositoryDataSource implements IAdvisoryDataSource {
 
     const reviewedPath = join(this.repoPath, 'advisories', 'github-reviewed');
     await this.indexDirectory(reviewedPath);
-    
+
+    // Opt-in: also index the (much larger) unreviewed tier for "all" searches.
+    if (process.env.ADVISORY_INCLUDE_UNREVIEWED === 'true') {
+      await this.indexDirectory(join(this.repoPath, 'advisories', 'unreviewed'));
+    }
+
     this.indexBuilt = true;
   }
 
@@ -331,7 +368,7 @@ export class LocalRepositoryDataSource implements IAdvisoryDataSource {
       repository_advisory_url: null,
       summary: osv.summary || osv.details.split('\n')[0],
       description: osv.details,
-      type: 'reviewed',
+      type: osv.database_specific.github_reviewed ? 'reviewed' : 'unreviewed',
       severity: osv.database_specific.severity.toLowerCase(),
       source_code_location: null,
       identifiers: [
@@ -446,6 +483,17 @@ export class LocalRepositoryDataSource implements IAdvisoryDataSource {
       results = results.filter(a =>
         cweFilterMatches(a.cwes.map(cwe => cwe.cwe_id), options.cwes!)
       );
+    }
+
+    // Review tier: default to reviewed-only for parity with prior behavior.
+    const tier = options.type || 'reviewed';
+    if (tier !== 'all') {
+      results = results.filter(a => a.type === tier);
+    }
+
+    // Web-application focus: keep only advisories whose CWEs are web-app classes.
+    if (options.web_app_only) {
+      results = results.filter(a => isWebAppAdvisory(a.cwes.map(c => c.cwe_id)));
     }
 
     if (options.is_withdrawn !== undefined) {

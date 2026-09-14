@@ -58,7 +58,9 @@ export const listAdvisoriesSchema = z.object({
   updated: z.string().optional().describe('Filter by updated date in YYYY-MM-DD format. Single date returns that day only. Range format: "2026-01-01..2026-01-31" returns inclusive range'),
   per_page: z.number().min(1).max(100).optional().describe('Results per page (default: 30, max: 100)'),
   direction: z.enum(['asc', 'desc']).optional().describe('Sort direction (default: desc, newest first)'),
-  sort: z.enum(['updated', 'published']).optional().describe('Sort field (default: published)')
+  sort: z.enum(['updated', 'published']).optional().describe('Sort field (default: published)'),
+  type: z.enum(['reviewed', 'unreviewed', 'all']).optional().describe('Review tier: "reviewed" (default, curated ~35k), "unreviewed" (raw, ~335k), or "all". Non-reviewed requires the server to run with ADVISORY_INCLUDE_UNREVIEWED=true.'),
+  web_app_only: z.boolean().optional().describe('Keep only web-application vulnerability classes by CWE (injection, XSS, SSRF/CSRF, path traversal, auth/z, session, deserialization, request smuggling)')
 });
 
 export async function listAdvisories(params: unknown): Promise<CallToolResult> {
