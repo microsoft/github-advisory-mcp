@@ -64,6 +64,58 @@ interface OSVAdvisory {
 }
 
 /**
+ * Maps the GitHub-style ecosystem names accepted by the tool schema to the OSV
+ * ecosystem names actually stored in advisory-database (differs in name/casing).
+ */
+const ECOSYSTEM_ALIASES: Record<string, string> = {
+  npm: 'npm',
+  pip: 'PyPI',
+  maven: 'Maven',
+  nuget: 'NuGet',
+  rubygems: 'RubyGems',
+  composer: 'Packagist',
+  go: 'Go',
+  rust: 'crates.io',
+  erlang: 'Hex',
+  pub: 'Pub',
+  swift: 'SwiftURL',
+  actions: 'GitHub Actions',
+};
+
+/**
+ * Case-insensitive ecosystem match that also accepts the OSV name directly.
+ */
+export function ecosystemMatches(packageEcosystem: string, requested: string): boolean {
+  const canonical = ECOSYSTEM_ALIASES[requested.toLowerCase()] ?? requested;
+  return packageEcosystem.toLowerCase() === canonical.toLowerCase();
+}
+
+/**
+ * Normalize a CWE token to canonical `CWE-<n>` (uppercase), accepting bare
+ * numbers (`89`) or already-prefixed ids (`CWE-89`).
+ */
+export function normalizeCwe(token: string): string {
+  const t = String(token).trim();
+  return (/^cwe-/i.test(t) ? t : `CWE-${t}`).toUpperCase();
+}
+
+/**
+ * True if an advisory's CWE ids intersect the requested filter. Requested
+ * values may be an array and/or comma-separated, bare or prefixed.
+ */
+export function cweFilterMatches(advisoryCweIds: string[], requested: string[]): boolean {
+  const wanted = new Set(
+    requested
+      .flatMap(c => String(c).split(','))
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(normalizeCwe)
+  );
+  if (wanted.size === 0) return true;
+  return advisoryCweIds.some(id => wanted.has(normalizeCwe(id)));
+}
+
+/**
  * Data source that reads from local cloned github/advisory-database repository
  */
 export class LocalRepositoryDataSource implements IAdvisoryDataSource {
@@ -380,7 +432,7 @@ export class LocalRepositoryDataSource implements IAdvisoryDataSource {
 
     if (options.ecosystem) {
       results = results.filter(a =>
-        a.vulnerabilities.some(v => v.package.ecosystem === options.ecosystem)
+        a.vulnerabilities.some(v => ecosystemMatches(v.package.ecosystem, options.ecosystem!))
       );
     }
 
@@ -392,7 +444,7 @@ export class LocalRepositoryDataSource implements IAdvisoryDataSource {
 
     if (options.cwes && options.cwes.length > 0) {
       results = results.filter(a =>
-        a.cwes.some(cwe => options.cwes!.includes(cwe.cwe_id))
+        cweFilterMatches(a.cwes.map(cwe => cwe.cwe_id), options.cwes!)
       );
     }
 
@@ -471,7 +523,7 @@ export class LocalRepositoryDataSource implements IAdvisoryDataSource {
     // Apply all filters from listAdvisories
     if (options.ecosystem) {
       results = results.filter(a =>
-        a.vulnerabilities.some(v => v.package.ecosystem === options.ecosystem)
+        a.vulnerabilities.some(v => ecosystemMatches(v.package.ecosystem, options.ecosystem!))
       );
     }
 
