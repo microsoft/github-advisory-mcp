@@ -109,6 +109,12 @@ node dist\http-server.js
 ADVISORY_REPO_PATH=/path/to/advisory-database node dist/index.js
 ```
 
+### Guides
+
+- [Correlating advisories with code](docs/advisory-code-correlation.md) — use the
+  advisory server together with a code-search MCP to locate and triage vulnerable
+  code paths.
+
 ## Testing
 
 ### Quick Test (Copilot Chat)
