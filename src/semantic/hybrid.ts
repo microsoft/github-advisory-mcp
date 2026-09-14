@@ -56,7 +56,8 @@ export async function hybridSearch(
   index: LoadedIndex,
   query: string,
   topK = 10,
-  fetch = 50
+  fetch = 50,
+  queryEmbedding?: Float32Array   // inject to search without loading the model (tests)
 ): Promise<SearchHit[]> {
   const bm25 = Bm25.fromJSON(index.bm25);
 
@@ -65,7 +66,7 @@ export async function hybridSearch(
   const temporal = parseTemporal(query);
   const recallQuery = temporal.present && temporal.residual ? temporal.residual : query;
 
-  const qEmbedding = await embed(recallQuery);
+  const qEmbedding = queryEmbedding ?? await embed(recallQuery);
   const qTokens = new Set(tokenize(recallQuery));
 
   const vec = vectorTopK(qEmbedding, index.vectors, index.docs.length, fetch);

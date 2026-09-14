@@ -9,12 +9,11 @@
  */
 
 import { execFileSync } from 'child_process';
-import { join } from 'path';
 import { LocalRepositoryDataSource } from '../datasources/local-repository.js';
 import { toDoc, type AdvisoryDoc } from './document.js';
 import { embedBatch, modelName, EMBED_DIM } from './embeddings.js';
 import { Bm25 } from './bm25.js';
-import { saveIndex, INDEX_DIR, type IndexMeta } from './store.js';
+import { saveIndex, indexDir, type IndexMeta } from './store.js';
 
 const REPO = process.env.ADVISORY_REPO_PATH || './external/advisory-database';
 const BATCH = Number(process.env.SEMANTIC_BATCH || 64);
@@ -51,7 +50,7 @@ async function main() {
     dbCommit: dbCommit(), builtAt: new Date().toISOString(),
   };
   await saveIndex(meta, docs, vectors, bm25.toJSON());
-  console.error(`[build] saved index -> ${join(INDEX_DIR)} (${docs.length} docs)`);
+  console.error(`[build] saved index -> ${indexDir()} (${docs.length} docs)`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

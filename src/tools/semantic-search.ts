@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { createLogger } from '../logger.js';
-import { indexExists, loadIndex, INDEX_DIR, type LoadedIndex } from '../semantic/store.js';
+import { indexExists, loadIndex, indexDir, type LoadedIndex } from '../semantic/store.js';
 import { hybridSearch } from '../semantic/hybrid.js';
 import { ecosystemMatches, cweFilterMatches, isWebAppAdvisory } from '../datasources/local-repository.js';
 
@@ -40,7 +40,7 @@ export async function semanticSearch(params: unknown): Promise<CallToolResult> {
       isError: true,
       content: [{
         type: 'text',
-        text: `Semantic index not found at ${INDEX_DIR}. Build it first:\n` +
+        text: `Semantic index not found at ${indexDir()}. Build it first:\n` +
           `  ADVISORY_REPO_PATH=./external/advisory-database \\\n` +
           `  SEMANTIC_MODEL_CACHE=<transformers cache dir> \\\n` +
           `  node dist/semantic/build-index.js --limit 5000`,
