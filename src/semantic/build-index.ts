@@ -2,7 +2,7 @@
  * Prototype CLI: build the local hybrid index from the advisory DB.
  *
  *   ADVISORY_REPO_PATH=./external/advisory-database \
- *   SEMANTIC_MODEL_CACHE=C:/build/romulus-gym/services/memory/models/.cache \
+ *   SEMANTIC_MODEL_CACHE=<path to a transformers cache> \
  *   node dist/semantic/build-index.js --limit 5000
  *
  * --limit N   build over the first N advisories (fast validation); omit for all reviewed.

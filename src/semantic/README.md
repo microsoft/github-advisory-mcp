@@ -24,8 +24,9 @@ memory store.
 ## Run
 
 ```powershell
-# reuse an existing transformers cache to stay fully offline (no HF download)
-$env:SEMANTIC_MODEL_CACHE = "C:\build\romulus-gym\services\memory\models\.cache"
+# point at a pre-downloaded @huggingface/transformers cache to stay offline
+# (omit it + set SEMANTIC_ALLOW_REMOTE=true to download the model instead)
+$env:SEMANTIC_MODEL_CACHE = "<path to a transformers cache>"
 $env:ADVISORY_REPO_PATH   = "./external/advisory-database"
 
 npm run build

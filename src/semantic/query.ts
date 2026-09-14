@@ -1,7 +1,7 @@
 /**
  * Prototype CLI: query the local hybrid index.
  *
- *   SEMANTIC_MODEL_CACHE=C:/build/romulus-gym/services/memory/models/.cache \
+ *   SEMANTIC_MODEL_CACHE=<path to a transformers cache> \
  *   node dist/semantic/query.js "blind ORM injection via sort parameter" --top 8
  */
 
