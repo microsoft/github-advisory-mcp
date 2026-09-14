@@ -1,30 +1,45 @@
-name: Semantic Index (weekly refresh)
+name: Semantic Index (manual build)
 
-# Rebuilds the local semantic-search index weekly and publishes it as a rolling
-# Release asset (`semantic-index-latest`). Consumers download + extract it instead of
-# re-embedding the corpus. A Release asset is used (not an LFS commit to `main`)
-# because `main` is protected (signed commits + required PR), so a scheduled job
-# cannot push to it — and it keeps the ~96 MB blob off every clone.
+# Manually-triggered rebuild of the local semantic-search index. Produces a
+# downloadable workflow ARTIFACT (`semantic-index`) — no Release, no repo write.
+# Restricted to maintainers/admins via the `authorize` gate below. The weekly
+# `schedule` is intentionally NOT enabled yet — see
+# docs/semantic-index-distribution.md for how to turn it on and lock it down.
 
 on:
   workflow_dispatch:
     inputs:
       limit:
-        description: "Advisories to embed (0 = all reviewed ~35k; use a small number for a test)"
+        description: "Advisories to embed (0 = all reviewed ~35k; e.g. 2000 for a quick test)"
         required: false
-        default: "0"
-  schedule:
-    - cron: "0 6 * * 1" # Mondays 06:00 UTC — schedule only fires from the default branch
+        default: "2000"
 
 permissions:
-  contents: write # create/update the rolling Release asset
+  contents: read # read repo + upload artifact only; never writes to the repo
 
 concurrency:
   group: semantic-index
   cancel-in-progress: false
 
 jobs:
+  # Only maintainers/admins may proceed. workflow_dispatch already requires write
+  # access; this narrows it to maintain/admin.
+  authorize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require maintainer or admin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PERM=$(gh api "repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission" --jq '.permission' 2>/dev/null || echo "unknown")
+          echo "Actor '${{ github.actor }}' permission: $PERM"
+          case "$PERM" in
+            admin|maintain) echo "Authorized." ;;
+            *) echo "::error::Only maintainers/admins may run this workflow (actor has '$PERM')."; exit 1 ;;
+          esac
+
   build-index:
+    needs: authorize
     runs-on: ubuntu-latest
     timeout-minutes: 60 # a full ~35k rebuild fits comfortably (~30 min budget)
     steps:
@@ -60,34 +75,19 @@ jobs:
           SEMANTIC_ALLOW_REMOTE: "true" # CI runner may fetch the model (no corp block)
         run: |
           LIMIT="${{ github.event.inputs.limit }}"
-          LIMIT="${LIMIT:-0}"
+          LIMIT="${LIMIT:-2000}"
           if [ "$LIMIT" = "0" ]; then
             node dist/semantic/build-index.js
           else
             node dist/semantic/build-index.js --limit "$LIMIT"
           fi
 
-      - name: Package index
+      - name: Index stats
         run: |
+          ls -lh .semantic-index
           echo "---- meta.json ----"; cat .semantic-index/meta.json
-          tar -czf semantic-index.tar.gz -C .semantic-index .
-          ls -lh semantic-index.tar.gz
 
-      - name: Publish rolling Release asset
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          DBC=$(node -e "process.stdout.write(String((require('./.semantic-index/meta.json').dbCommit)||'unknown'))")
-          NOTES="Prebuilt local semantic-search index (embeddings.bin + bm25.json + docs.json + meta.json). Rebuilt weekly. advisory-database @ ${DBC}. Extract into .semantic-index/."
-          if gh release view semantic-index-latest >/dev/null 2>&1; then
-            gh release upload semantic-index-latest semantic-index.tar.gz --clobber
-            gh release edit semantic-index-latest --notes "$NOTES"
-          else
-            gh release create semantic-index-latest semantic-index.tar.gz \
-              --title "Semantic index (latest)" --notes "$NOTES"
-          fi
-
-      - name: Upload workflow artifact (backup)
+      - name: Upload index artifact
         uses: actions/upload-artifact@v4
         with:
           name: semantic-index

@@ -3,22 +3,50 @@
 Status: prototype (`proto/semantic-search`). Applies to the local hybrid search
 index in `src/semantic/` (see its README).
 
-## Implemented
+## Current workflow: manual build → downloadable artifact
 
-`.github/workflows/semantic-index.yml` runs **weekly** (`cron: "0 6 * * 1"`, plus
-manual `workflow_dispatch`): it rebuilds the reviewed-tier index and publishes it as a
-rolling GitHub **Release asset** `semantic-index-latest` (`semantic-index.tar.gz`).
-A Release asset is used rather than an LFS commit to `main` because `main` is protected
-(signed commits + required PR), so a scheduled job cannot push to it — and it keeps the
-~96 MB blob off every clone. To consume:
+`.github/workflows/semantic-index.yml` is a **manually-triggered** build
+(`workflow_dispatch`) that rebuilds the index and uploads it as a workflow
+**artifact** named `semantic-index` (retention 14 days). It does **not** write to the
+repo and does **not** create a Release — so `permissions: contents: read` only, no
+branch-protection interaction, no clone bloat. The weekly `schedule` is **deferred**
+(not enabled yet).
+
+Run it: **Actions → “Semantic Index (manual build)” → Run workflow**, pick the branch,
+optionally set `limit` (default `2000` for a quick test; `0` = full reviewed ~35k).
+Download from the run's **Artifacts**, then:
 
 ```bash
-gh release download semantic-index-latest -p semantic-index.tar.gz
-mkdir -p .semantic-index && tar -xzf semantic-index.tar.gz -C .semantic-index
+# unzip the downloaded 'semantic-index' artifact into the repo, then:
+mkdir -p .semantic-index && cp -f semantic-index/* .semantic-index/
 ```
 
-The git-lfs channel below remains a valid alternative if you prefer the index to live
-in-tree (on a dedicated, unprotected branch).
+### Who can trigger it (access control)
+
+- **Baseline:** `workflow_dispatch` can only be started by users with **write** access
+  — GitHub rejects a dispatch from anyone without it.
+- **Narrowed to maintainers/admins:** the `authorize` job checks the actor's
+  collaborator permission and fails unless it is `admin` or `maintain`.
+- **Hard enforcement (recommended, admin-configured):** create a repo **Environment**
+  named `semantic-index` with **required reviewers** = the maintainer team, then add
+  `environment: semantic-index` to the `build-index` job. Each run then pauses for
+  maintainer approval before doing any work. Left un-wired by default so we don't
+  auto-create an environment.
+
+### Enabling the weekly schedule later (deferred)
+
+Add back to the workflow (the `schedule` trigger only fires from the default branch):
+
+```yaml
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # Mondays 06:00 UTC
+```
+
+Scheduled runs execute as the repo (no interactive actor), so guard the `authorize`
+actor-check with `if: github.event_name == 'workflow_dispatch'`. For *distributing* a
+scheduled build's output, choose a Release asset or a git-lfs branch (below) — **not
+wired yet.**
 
 ## Why redistribute at all
 
