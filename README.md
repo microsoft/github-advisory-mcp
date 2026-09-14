@@ -56,7 +56,7 @@ npm run build
 ```
 
 3. **Reload VS Code** - Copilot will automatically:
-   - Clone the advisory database (~310K advisories) on first use
+   - Clone the advisory database (~370K advisory files; ~35K github-reviewed served) on first use
    - Enable MCP tools: `list_advisories`, `get_advisory`
 
 4. **Test in Copilot Chat:**
@@ -292,7 +292,7 @@ All MCP tool parameters are validated using **Zod schemas**:
 **Considerations:**
 - **stdio mode**: Single-process, single-user - no rate limiting needed
 - **HTTP mode**: Consider adding rate limiting if exposed beyond localhost
-- **Database queries**: Inherently rate-limited by disk I/O (310K+ files)
+- **Database queries**: Inherently rate-limited by disk I/O (hundreds of thousands of files)
 
 **Future (HTTP mode):**
 ```typescript
@@ -367,7 +367,7 @@ fatal: unable to access 'https://github.com/github/advisory-database.git/': Coul
 3. Pre-download database: `git clone --depth=1 https://github.com/github/advisory-database.git external/advisory-database`
 4. Point to existing database: `export ADVISORY_REPO_PATH=/path/to/existing/advisory-database`
 
-**Timing:** Initial clone takes 2-5 minutes (310K+ files, ~500MB)
+**Timing:** Initial clone takes 2-5 minutes (hundreds of thousands of files)
 
 ### Server Won't Start
 
@@ -414,12 +414,12 @@ git clone --depth=1 https://github.com/github/advisory-database.git external/adv
 1. First query always slower (loads database index into memory)
 2. Use `per_page` parameter to limit results: `per_page: 10`
 3. Filter by ecosystem to reduce search space: `ecosystem: "npm"`
-4. Check disk I/O: Advisory database is 310K+ files
+4. Check disk I/O: the advisory database is hundreds of thousands of files
 
 **Performance Benchmarks:**
-- First query (cold start): 2-4 seconds (index load)
-- Subsequent queries: 50-200ms (cached)
-- Database size: ~500MB, 310,635 files
+- First query (cold start): builds the in-memory index (slower)
+- Subsequent queries: fast (index cached in memory)
+- Database size: ~370K advisory JSON files (~35K github-reviewed served by default)
 
 ### Database Update Strategy
 
@@ -442,7 +442,7 @@ git pull origin main
 - Use `Start.ps1` script for convenient startup
 
 ### Database Size
-- The advisory-database is ~100K+ JSON files
+- The advisory-database is ~370K advisory JSON files (~35K github-reviewed)
 - Shallow clone (`--depth=1`) recommended
 - First query loads entire index into memory (lazy loading)
 - Subsequent queries are fast (cached)
@@ -453,27 +453,15 @@ git pull origin main
 
 **GitHub Actions Workflows:**
 
-1. **Build Validation** (`.github/workflows/build.yml`)
-   - **Triggers:** Push to main/dev, PRs
-   - **Matrix:** Node.js 18.x, 20.x on Ubuntu latest
-   - **Steps:** Checkout → Setup Node → npm ci → Build → Verify artifacts
-   - **Timing:** ~27-33 seconds
+1. **Build and Test** (`.github/workflows/build.yml`)
+   - **Triggers:** Push to `main`, PRs to `main`
+   - **Matrix:** Node.js 20.x, 22.x on Ubuntu latest
+   - **Steps:** Checkout → Setup Node → `npm ci` → build → verify artifacts → unit tests with coverage. End-to-end tests run on the `main` branch.
 
 2. **Copilot PR Review** (`.github/workflows/copilot-review.yml`)
    - **Triggers:** PR opened or synchronized
    - **Action:** Automatically requests Copilot code review
    - **Permissions:** pull-requests: write, contents: read
-   - **Benefit:** Automated AI code review on every PR
-
-**Timing Estimates:**
-- npm ci: ~10 seconds (dependency install)
-- npm run build: ~4 seconds (TypeScript compilation)
-- **Total CI time: ~27-33 seconds**
-
-**Note:** Tests are not run in CI (yet) because:
-- Database clone takes 2-5 minutes (310K+ files)
-- Would increase CI time to ~6-7 minutes per run
-- Consider separate "full test" workflow for main branch only
 
 **Watch Mode:**
 ```powershell

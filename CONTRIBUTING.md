@@ -33,7 +33,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 - **OpenTelemetry** - Comprehensive instrumentation
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 20+
 - Git
 - VS Code (recommended)
 
@@ -62,8 +62,9 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 
 5. **Run tests**
    ```bash
-   npm test
+   npx vitest run test/unit   # fast, hermetic unit tests
    ```
+   `npm test` runs every suite, including the Azure-credentialed integration tests.
 
 ### Submission Guidelines
 
@@ -75,10 +76,10 @@ Before submitting an issue, please search the existing issues to avoid duplicate
 - Environment details (Node.js version, OS, etc.)
 
 #### Pull Requests
-1. Create a new branch from `dev`
+1. Create a new branch from `main`
 2. Make your changes with clear, descriptive commit messages
 3. Add tests for new functionality
-4. Ensure all tests pass (`npm test`)
+4. Ensure all tests pass (`npx vitest run test/unit`)
 5. Update documentation as needed
 6. Submit a pull request to the `dev` branch
 
