@@ -8,6 +8,11 @@
 
 import { env, pipeline } from '@huggingface/transformers';
 
+// transformers pulls `sharp` (image codecs) transitively and pins a vulnerable
+// `^0.34.1`. We only do TEXT embeddings, so sharp's libvips/libheif decode paths
+// are never exercised here — but we still force sharp >= 0.35.4 via package.json
+// `overrides` to clear GHSA-rgj7-g3m4-5g8c and GHSA-f88m-g3jw-g9cj.
+
 const MODEL = process.env.SEMANTIC_MODEL || 'Xenova/all-MiniLM-L6-v2';
 export const EMBED_DIM = Number(process.env.SEMANTIC_DIM || 384);
 
