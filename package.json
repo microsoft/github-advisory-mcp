@@ -17,7 +17,9 @@
     "test:integration": "vitest run test/integration",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "semantic:build": "node dist/semantic/build-index.js",
+    "semantic:query": "node dist/semantic/query.js"
   },
   "keywords": [
     "mcp",
@@ -31,6 +33,7 @@
   "author": "Microsoft",
   "license": "MIT",
   "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/api-logs": "^0.222.0",

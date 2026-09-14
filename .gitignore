@@ -31,3 +31,7 @@ Thumbs.db
 
 # External advisory database (git submodule/clone)
 external/
+
+# Semantic-search prototype: local index + downloaded model weights
+.semantic-index/
+models/
