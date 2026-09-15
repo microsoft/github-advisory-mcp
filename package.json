@@ -68,7 +68,7 @@
     "@vitest/coverage-v8": "^4.1.11",
     "ai": "^7.0.97",
     "dotenv": "^17.4.2",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   },
   "overrides": {
