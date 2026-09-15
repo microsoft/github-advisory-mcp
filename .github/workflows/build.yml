@@ -34,7 +34,7 @@ jobs:
       run: ls -lh dist/
 
     - name: Run unit tests
-      run: npx vitest run test/unit
+      run: npx vitest run test/unit --coverage
 
   e2e:
     runs-on: ubuntu-latest

@@ -12,12 +12,16 @@
     "dev": "tsc --watch",
     "start:stdio": "node dist/index.js",
     "start:http": "node dist/http-server.js",
-    "test": "vitest run",
+    "test": "vitest run test/unit",
+    "test:all": "vitest run",
+    "test:coverage": "vitest run test/unit --coverage",
     "test:e2e": "vitest run test/e2e",
     "test:integration": "vitest run test/integration",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "semantic:build": "node dist/semantic/build-index.js",
+    "semantic:query": "node dist/semantic/query.js"
   },
   "keywords": [
     "mcp",
@@ -31,6 +35,7 @@
   "author": "Microsoft",
   "license": "MIT",
   "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/api-logs": "^0.222.0",
@@ -60,13 +65,15 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^26.5.1",
+    "@vitest/coverage-v8": "^4.1.11",
     "ai": "^7.0.97",
     "dotenv": "^17.4.2",
     "typescript": "^5.9.3",
     "vitest": "^4.1.11"
   },
   "overrides": {
-    "vite": "^7.1.12"
+    "vite": "^7.1.12",
+    "sharp": ">=0.35.4"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -56,7 +56,7 @@ npm run build
 ```
 
 3. **Reload VS Code** - Copilot will automatically:
-   - Clone the advisory database (~310K advisories) on first use
+   - Clone the advisory database (~370K advisory files; ~35K github-reviewed served) on first use
    - Enable MCP tools: `list_advisories`, `get_advisory`
 
 4. **Test in Copilot Chat:**
@@ -129,10 +129,10 @@ Or query advisories directly:
 @workspace Get details for GHSA-jc85-fpwf-qm7x
 ```
 
-### Unit Tests (Automated)
+### Automated Tests
 ```bash
-npm test           # All tests
-npm run test:e2e   # E2E tests (18 tests, ~9.5s after database cached)
+npx vitest run test/unit   # fast, hermetic unit tests (this is what `npm test` runs)
+npm run test:e2e           # end-to-end MCP tests (needs the advisory database)
 ```
 
 ### Health Checks
@@ -144,71 +144,10 @@ Invoke-RestMethod http://localhost:18006/health
 Invoke-RestMethod http://localhost:18005/health
 ```
 
-### Test Local REST API Directly
+### Test the REST API and MCP protocol directly
 
-**List advisories by ecosystem:**
-```powershell
-Invoke-RestMethod "http://localhost:18005/advisories?ecosystem=npm&per_page=5"
-```
-
-**Get specific advisory:**
-```powershell
-Invoke-RestMethod "http://localhost:18005/advisories/GHSA-jc85-fpwf-qm7x"
-```
-
-**Search advisories:**
-```powershell
-Invoke-RestMethod "http://localhost:18005/search?q=express"
-```
-
-### Test MCP Tools
-
-**Initialize Session:**
-```powershell
-$body = @{
-  jsonrpc = "2.0"
-  id = 1
-  method = "initialize"
-  params = @{
-    protocolVersion = "2024-11-05"
-    capabilities = @{}
-    clientInfo = @{ name = "test-client"; version = "1.0.0" }
-  }
-} | ConvertTo-Json -Depth 10
-
-$response = Invoke-RestMethod -Uri "http://localhost:18006/mcp" -Method POST -Body $body -ContentType "application/json"
-$sessionId = $response.result.sessionId
-```
-
-**List Tools:**
-```powershell
-$body = @{
-  jsonrpc = "2.0"
-  id = 2
-  method = "tools/list"
-} | ConvertTo-Json
-
-Invoke-RestMethod -Uri "http://localhost:18006/mcp" -Method POST -Body $body -ContentType "application/json" -Headers @{"Mcp-Session-Id"=$sessionId}
-```
-
-**Call list_advisories:**
-```powershell
-$body = @{
-  jsonrpc = "2.0"
-  id = 3
-  method = "tools/call"
-  params = @{
-    name = "list_advisories"
-    arguments = @{
-      ecosystem = "npm"
-      severity = "high"
-      per_page = 5
-    }
-  }
-} | ConvertTo-Json -Depth 10
-
-Invoke-RestMethod -Uri "http://localhost:18006/mcp" -Method POST -Body $body -ContentType "application/json" -Headers @{"Mcp-Session-Id"=$sessionId}
-```
+Low-level REST and raw MCP JSON-RPC request recipes (health checks, session
+initialize, `tools/list`, `tools/call`) live in [docs/http-api.md](docs/http-api.md).
 
 ## Environment Variables
 
@@ -292,20 +231,10 @@ All MCP tool parameters are validated using **Zod schemas**:
 **Considerations:**
 - **stdio mode**: Single-process, single-user - no rate limiting needed
 - **HTTP mode**: Consider adding rate limiting if exposed beyond localhost
-- **Database queries**: Inherently rate-limited by disk I/O (310K+ files)
+- **Database queries**: Inherently rate-limited by disk I/O (hundreds of thousands of files)
 
-**Future (HTTP mode):**
-```typescript
-// Example: express-rate-limit for HTTP endpoints
-import rateLimit from 'express-rate-limit';
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
-});
-
-app.use('/mcp', limiter);
-```
+**Future (HTTP mode):** add rate limiting if you expose the server beyond
+localhost — see [docs/integration.md](docs/integration.md).
 
 ### Session Security
 
@@ -325,27 +254,8 @@ app.use('/mcp', limiter);
 
 ## Integration with Orchestrator
 
-The MCP Advisory server can be integrated with orchestration platforms:
-
-```python
-from mcp import ClientSession
-from mcp.client.stdio import stdio_client
-
-# Connect to MCP Advisory server
-async with stdio_client(
-    command="node",
-    args=["dist/index.js"],
-    env={
-        "ADVISORY_REPO_PATH": "/path/to/advisory-database"
-    }
-) as (read, write):
-    async with ClientSession(read, write) as session:
-        # List npm advisories
-        result = await session.call_tool(
-            "list_advisories",
-            arguments={"ecosystem": "npm", "per_page": 10}
-        )
-```
+The stdio MCP server can be driven from any MCP client. A Python client example
+and an HTTP rate-limiting snippet are in [docs/integration.md](docs/integration.md).
 
 ## Port Allocation
 
@@ -367,7 +277,7 @@ fatal: unable to access 'https://github.com/github/advisory-database.git/': Coul
 3. Pre-download database: `git clone --depth=1 https://github.com/github/advisory-database.git external/advisory-database`
 4. Point to existing database: `export ADVISORY_REPO_PATH=/path/to/existing/advisory-database`
 
-**Timing:** Initial clone takes 2-5 minutes (310K+ files, ~500MB)
+**Timing:** Initial clone takes 2-5 minutes (hundreds of thousands of files)
 
 ### Server Won't Start
 
@@ -414,12 +324,12 @@ git clone --depth=1 https://github.com/github/advisory-database.git external/adv
 1. First query always slower (loads database index into memory)
 2. Use `per_page` parameter to limit results: `per_page: 10`
 3. Filter by ecosystem to reduce search space: `ecosystem: "npm"`
-4. Check disk I/O: Advisory database is 310K+ files
+4. Check disk I/O: the advisory database is hundreds of thousands of files
 
 **Performance Benchmarks:**
-- First query (cold start): 2-4 seconds (index load)
-- Subsequent queries: 50-200ms (cached)
-- Database size: ~500MB, 310,635 files
+- First query (cold start): builds the in-memory index (slower)
+- Subsequent queries: fast (index cached in memory)
+- Database size: ~370K advisory JSON files (~35K github-reviewed served by default)
 
 ### Database Update Strategy
 
@@ -442,7 +352,7 @@ git pull origin main
 - Use `Start.ps1` script for convenient startup
 
 ### Database Size
-- The advisory-database is ~100K+ JSON files
+- The advisory-database is ~370K advisory JSON files (~35K github-reviewed)
 - Shallow clone (`--depth=1`) recommended
 - First query loads entire index into memory (lazy loading)
 - Subsequent queries are fast (cached)
@@ -453,27 +363,15 @@ git pull origin main
 
 **GitHub Actions Workflows:**
 
-1. **Build Validation** (`.github/workflows/build.yml`)
-   - **Triggers:** Push to main/dev, PRs
-   - **Matrix:** Node.js 18.x, 20.x on Ubuntu latest
-   - **Steps:** Checkout → Setup Node → npm ci → Build → Verify artifacts
-   - **Timing:** ~27-33 seconds
+1. **Build and Test** (`.github/workflows/build.yml`)
+   - **Triggers:** Push to `main`, PRs to `main`
+   - **Matrix:** Node.js 20.x, 22.x on Ubuntu latest
+   - **Steps:** Checkout → Setup Node → `npm ci` → build → verify artifacts → unit tests with coverage. End-to-end tests run on the `main` branch.
 
 2. **Copilot PR Review** (`.github/workflows/copilot-review.yml`)
    - **Triggers:** PR opened or synchronized
    - **Action:** Automatically requests Copilot code review
    - **Permissions:** pull-requests: write, contents: read
-   - **Benefit:** Automated AI code review on every PR
-
-**Timing Estimates:**
-- npm ci: ~10 seconds (dependency install)
-- npm run build: ~4 seconds (TypeScript compilation)
-- **Total CI time: ~27-33 seconds**
-
-**Note:** Tests are not run in CI (yet) because:
-- Database clone takes 2-5 minutes (310K+ files)
-- Would increase CI time to ~6-7 minutes per run
-- Consider separate "full test" workflow for main branch only
 
 **Watch Mode:**
 ```powershell

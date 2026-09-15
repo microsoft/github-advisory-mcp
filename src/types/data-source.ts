@@ -14,6 +14,10 @@ export interface AdvisoryListOptions {
   published?: string;
   updated?: string;
   modified?: string;
+  /** Which review tier to include (default 'reviewed'). 'all'/'unreviewed' require ADVISORY_INCLUDE_UNREVIEWED=true at index time. */
+  type?: 'reviewed' | 'unreviewed' | 'all';
+  /** Keep only advisories whose CWEs map to web-application vulnerability classes. */
+  web_app_only?: boolean;
   epss_percentage?: string;
   epss_percentile?: string;
   before?: string;

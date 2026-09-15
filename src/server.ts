@@ -4,6 +4,7 @@ import {
   listAdvisories,
   getAdvisory,
 } from "./tools/advisories.js";
+import { semanticSearch } from "./tools/semantic-search.js";
 
 /**
  * Create and configure the MCP server for local advisory database
@@ -61,6 +62,22 @@ export function createAdvisoryServer(): Server {
             },
             required: ["ghsa_id"]
           }
+        },
+        {
+          name: "semantic_search",
+          description: "Local hybrid semantic search over advisories (embeddings + BM25 + reranking). Use for natural-language / conceptual queries (e.g. 'blind ORM injection via sort parameter', 'account takeover in recent Keycloak'). A period in the query ('in August 2026', 'recent') drives temporal reranking. Requires the prototype index to be built.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              query: { type: "string", description: "Natural-language query; may include a period for temporal reranking" },
+              top_k: { type: "number", minimum: 1, maximum: 50, description: "Number of results (default 10)" },
+              web_app_only: { type: "boolean", description: "Keep only web-application vulnerability classes (by CWE)" },
+              severity: { type: "string", enum: ['low', 'medium', 'high', 'critical', 'unknown'], description: "Post-filter by severity" },
+              ecosystem: { type: "string", enum: ['rubygems', 'npm', 'pip', 'maven', 'nuget', 'composer', 'go', 'rust', 'erlang', 'actions', 'pub', 'other', 'swift'], description: "Post-filter by ecosystem" },
+              cwes: { type: "string", description: "Comma-separated CWE ids to require (e.g. '89' or 'CWE-89,79')" }
+            },
+            required: ["query"]
+          }
         }
       ]
     };
@@ -75,6 +92,8 @@ export function createAdvisoryServer(): Server {
         return await listAdvisories(args || {});
       case "get_advisory":
         return await getAdvisory(args || {});
+      case "semantic_search":
+        return await semanticSearch(args || {});
       default:
         throw new Error(`Unknown tool: ${name}`);
     }

@@ -212,7 +212,8 @@ function createAzureFetchAdapter(token: string): typeof fetch {
   };
 }
 
-describe("AI SDK Integration with Azure OpenAI (Azure AD Auth)", () => {
+// Skips the whole suite unless Azure OpenAI is configured (no creds -> skipped, not failed).
+describe.skipIf(!process.env.AZURE_OPENAI_ENDPOINT)("AI SDK Integration with Azure OpenAI (Azure AD Auth)", () => {
   const MCP_PORT = parseInt(process.env.MCP_PORT || "18006", 10);
   const API_PORT = parseInt(process.env.ADVISORY_API_PORT || "18005", 10);
   const REPO_PATH =
