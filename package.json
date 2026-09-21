@@ -65,7 +65,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^26.5.1",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^5.0.1",
     "ai": "^7.0.97",
     "dotenv": "^17.4.2",
     "typescript": "^5.9.3",
