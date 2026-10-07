@@ -22,3 +22,5 @@ updates:
     labels:
       - dependencies
       - ci/cd
+    cooldown:
+      default-days: 7

@@ -43,9 +43,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60 # a full ~35k rebuild fits comfortably (~30 min budget)
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22.x
           cache: npm
@@ -63,7 +63,7 @@ jobs:
 
       # Cache the ONNX model weights between runs (miss -> downloaded from HF).
       - name: Cache embedding model
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.cache/semantic-model
           key: semantic-model-minilm-v1
@@ -88,7 +88,7 @@ jobs:
           echo "---- meta.json ----"; cat .semantic-index/meta.json
 
       - name: Upload index artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: semantic-index
           path: .semantic-index/
